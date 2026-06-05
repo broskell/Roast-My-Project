@@ -132,6 +132,70 @@ export async function GET(req: Request) {
       }
     })
 
+    // Fetch user's resumes for timeline activity
+    const resumes = await payload.find({
+      collection: 'resumes',
+      where: {
+        user: { equals: user.id }
+      },
+      sort: '-createdAt',
+      limit: 50
+    })
+
+    // Compile timeline items
+    const recentActivity: any[] = []
+
+    // 1. Projects submitted
+    for (const project of projects.docs) {
+      recentActivity.push({
+        id: `project-${project.id}`,
+        type: 'project_submitted',
+        title: `Project '${project.title}' submitted`,
+        timestamp: new Date(project.createdAt).getTime(),
+        date: new Date(project.createdAt).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        })
+      })
+    }
+
+    // 2. Reviews generated
+    for (const review of docs) {
+      const projectObj = projects.docs.find(p => p.id === (typeof review.project === 'object' ? review.project.id : review.project))
+      const projectTitle = projectObj?.title || 'Unknown Project'
+      recentActivity.push({
+        id: `review-${review.id}`,
+        type: 'review_generated',
+        title: `Review '${review.mode}' generated for '${projectTitle}'`,
+        timestamp: new Date(review.createdAt).getTime(),
+        date: new Date(review.createdAt).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        })
+      })
+    }
+
+    // 3. Resumes reviewed
+    for (const resume of resumes.docs) {
+      recentActivity.push({
+        id: `resume-${resume.id}`,
+        type: 'resume_reviewed',
+        title: `Resume reviewed (Score: ${resume.score}/100)`,
+        timestamp: new Date(resume.createdAt).getTime(),
+        date: new Date(resume.createdAt).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        })
+      })
+    }
+
+    // Sort descending chronologically
+    recentActivity.sort((a, b) => b.timestamp - a.timestamp)
+    const slicedRecentActivity = recentActivity.slice(0, 10)
+
     return NextResponse.json({
       success: true,
       stats: {
@@ -141,7 +205,8 @@ export async function GET(req: Request) {
         highestScoringProject,
         lowestScoringProject,
         recentReviews,
-        reviewHistory // Recharts data
+        reviewHistory, // Recharts data
+        recentActivity: slicedRecentActivity
       }
     })
 

@@ -36,7 +36,6 @@ export async function POST(req: Request) {
       }
     })
 
-    // 3. Try sending OTP via Twilio
     const twilioSid = process.env.TWILIO_ACCOUNT_SID
     const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN
     const twilioPhone = process.env.TWILIO_PHONE_NUMBER
@@ -44,8 +43,13 @@ export async function POST(req: Request) {
     let isMockMode = false
     let twilioError = ''
 
-    // If twilio credential is a mock placeholder or empty, trigger mock mode
-    if (!twilioSid || !twilioAuthToken || !twilioPhone || twilioSid.includes('mock') || twilioPhone.includes('5005550006')) {
+    const missing: string[] = []
+    if (!twilioSid) missing.push('TWILIO_ACCOUNT_SID')
+    if (!twilioAuthToken) missing.push('TWILIO_AUTH_TOKEN')
+    if (!twilioPhone) missing.push('TWILIO_PHONE_NUMBER')
+
+    if (missing.length > 0) {
+      console.log(`[MOCK MODE Fallback] Missing Twilio environment variable(s): ${missing.join(', ')}`)
       isMockMode = true
     } else {
       try {

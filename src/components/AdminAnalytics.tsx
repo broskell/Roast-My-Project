@@ -25,12 +25,13 @@ export function AdminAnalytics() {
     return (
       <div style={{ 
         padding: '20px', 
-        background: '#110c1c', 
-        border: '1px solid rgba(255,255,255,0.06)', 
+        background: '#18181b', 
+        border: '1px solid #27272a', 
         borderRadius: '12px', 
         marginBottom: '24px', 
-        color: 'rgba(255,255,255,0.6)',
-        fontSize: '13px'
+        color: '#a1a1aa',
+        fontSize: '13px',
+        animation: 'pulse 1.5s infinite'
       }}>
         Loading System Analytics...
       </div>
@@ -40,16 +41,16 @@ export function AdminAnalytics() {
   return (
     <div style={{ 
       padding: '24px', 
-      background: '#110c1c', 
-      border: '1px solid rgba(255,255,255,0.06)', 
+      background: '#18181b', 
+      border: '1px solid #27272a', 
       borderRadius: '12px', 
       marginBottom: '24px', 
-      color: '#fff',
+      color: '#fafafa',
       fontFamily: 'system-ui, -apple-system, sans-serif'
     }}>
-      <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 4px 0' }}>System Overview</h2>
-      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', margin: '0 0 20px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-        Real-time database statistics across all collections
+      <h2 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 4px 0', color: '#fafafa' }}>System Overview</h2>
+      <p style={{ fontSize: '10px', color: '#71717a', margin: '0 0 20px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        Database statistics across collections
       </p>
       
       <div style={{ 
@@ -60,14 +61,14 @@ export function AdminAnalytics() {
         {/* Users Count Card */}
         <div style={{ 
           padding: '16px 20px', 
-          background: 'rgba(255,255,255,0.02)', 
-          border: '1px solid rgba(255,255,255,0.04)', 
+          background: '#09090b', 
+          border: '1px solid #27272a', 
           borderRadius: '8px' 
         }}>
-          <span style={{ fontSize: '10px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', letterSpacing: '0.05em' }}>
-            Total Registered Users
+          <span style={{ fontSize: '9px', textTransform: 'uppercase', color: '#71717a', fontWeight: 'bold', letterSpacing: '0.05em' }}>
+            Registered Users
           </span>
-          <p style={{ fontSize: '28px', fontWeight: '800', margin: '6px 0 0 0', color: '#c084fc' }}>
+          <p style={{ fontSize: '26px', fontWeight: '800', margin: '6px 0 0 0', color: '#fafafa' }}>
             {stats?.totalUsers || 0}
           </p>
         </div>
@@ -75,14 +76,14 @@ export function AdminAnalytics() {
         {/* Projects Count Card */}
         <div style={{ 
           padding: '16px 20px', 
-          background: 'rgba(255,255,255,0.02)', 
-          border: '1px solid rgba(255,255,255,0.04)', 
+          background: '#09090b', 
+          border: '1px solid #27272a', 
           borderRadius: '8px' 
         }}>
-          <span style={{ fontSize: '10px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', letterSpacing: '0.05em' }}>
-            Total Projects Uploaded
+          <span style={{ fontSize: '9px', textTransform: 'uppercase', color: '#71717a', fontWeight: 'bold', letterSpacing: '0.05em' }}>
+            Projects Uploaded
           </span>
-          <p style={{ fontSize: '28px', fontWeight: '800', margin: '6px 0 0 0', color: '#fb923c' }}>
+          <p style={{ fontSize: '26px', fontWeight: '800', margin: '6px 0 0 0', color: '#fafafa' }}>
             {stats?.totalProjects || 0}
           </p>
         </div>
@@ -90,14 +91,14 @@ export function AdminAnalytics() {
         {/* Reviews Count Card */}
         <div style={{ 
           padding: '16px 20px', 
-          background: 'rgba(255,255,255,0.02)', 
-          border: '1px solid rgba(255,255,255,0.04)', 
+          background: '#09090b', 
+          border: '1px solid #27272a', 
           borderRadius: '8px' 
         }}>
-          <span style={{ fontSize: '10px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', letterSpacing: '0.05em' }}>
-            Total AI Reviews Run
+          <span style={{ fontSize: '9px', textTransform: 'uppercase', color: '#71717a', fontWeight: 'bold', letterSpacing: '0.05em' }}>
+            AI Reviews Run
           </span>
-          <p style={{ fontSize: '28px', fontWeight: '800', margin: '6px 0 0 0', color: '#60a5fa' }}>
+          <p style={{ fontSize: '26px', fontWeight: '800', margin: '6px 0 0 0', color: '#fafafa' }}>
             {stats?.totalReviews || 0}
           </p>
         </div>

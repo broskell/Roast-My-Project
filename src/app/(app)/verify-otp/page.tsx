@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import apiClient from '../../../utils/apiClient'
 import { useAuth } from '../../../context/AuthContext'
-import { ShieldCheck, ArrowLeft } from 'lucide-react'
+import { ShieldCheck, ArrowLeft, AlertTriangle, FileCheck } from 'lucide-react'
 import Link from 'next/link'
 
 function VerifyOtpContent() {
@@ -20,7 +20,6 @@ function VerifyOtpContent() {
   const name = searchParams.get('name') || ''
 
   useEffect(() => {
-    // If no phone number is provided, redirect back to login page
     if (!phone) {
       router.push('/login')
     }
@@ -78,37 +77,39 @@ function VerifyOtpContent() {
 
   return (
     <div className="flex min-h-[75vh] items-center justify-center px-4">
-      <div className="w-full max-w-md glass-panel rounded-3xl p-8 border border-white/5 shadow-2xl relative">
+      <div className="w-full max-w-md border border-zinc-800 bg-zinc-900/40 rounded-3xl p-8 shadow-2xl relative">
         <Link
           href="/login"
-          className="inline-flex items-center gap-1.5 text-xs text-white/40 hover:text-white mb-6 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-200 mb-6 transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to Login
         </Link>
 
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-extrabold text-white tracking-tight mb-2">Check Your Device</h2>
-          <p className="text-sm text-white/50">
-            We sent a 6-digit verification code to <span className="text-purple-300 font-semibold">{phone}</span>
+          <h2 className="text-2xl font-extrabold text-zinc-100 tracking-tight mb-1">Verify Code</h2>
+          <p className="text-xs text-zinc-500">
+            We sent a verification code to <span className="text-zinc-350 font-semibold">{phone}</span>
           </p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 text-xs sm:text-sm text-orange-400">
-            {error}
+          <div className="mb-6 p-4 rounded-xl border border-zinc-800 bg-zinc-950 text-xs sm:text-sm text-zinc-300 flex items-start gap-2.5">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-zinc-400 mt-0.5" />
+            <span>{error}</span>
           </div>
         )}
 
         {resendMessage && (
-          <div className="mb-6 p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs sm:text-sm text-purple-400">
-            {resendMessage}
+          <div className="mb-6 p-4 rounded-xl border border-zinc-800 bg-zinc-950 text-xs sm:text-sm text-zinc-300 flex items-start gap-2.5">
+            <FileCheck className="h-4 w-4 shrink-0 text-zinc-400 mt-0.5" />
+            <span>{resendMessage}</span>
           </div>
         )}
 
         <form onSubmit={handleVerify} className="space-y-6">
           <div>
-            <label className="block text-xs uppercase tracking-wider text-white/40 font-bold mb-2 text-center">
+            <label className="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-2 text-center">
               Verification Code
             </label>
             <div className="relative flex justify-center">
@@ -119,7 +120,7 @@ function VerifyOtpContent() {
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 required
-                className="w-40 tracking-[0.75em] text-center font-extrabold text-2xl glass-panel rounded-xl py-3 bg-white/2 border-white/5 focus:border-purple-500/50 text-white placeholder-white/10 focus:outline-none focus:ring-0"
+                className="w-40 tracking-[0.75em] text-center font-extrabold text-2xl bg-zinc-950 border border-zinc-850 rounded-xl py-3 text-zinc-100 placeholder-zinc-800 focus:border-zinc-750 focus:outline-none transition-colors"
               />
             </div>
           </div>
@@ -127,7 +128,7 @@ function VerifyOtpContent() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-semibold py-3.5 transition-colors cursor-pointer shadow-lg shadow-purple-600/10"
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 disabled:opacity-50 text-zinc-950 font-semibold py-3.5 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-2 focus:ring-offset-zinc-950"
           >
             <ShieldCheck className="h-5 w-5" />
             {loading ? 'Verifying...' : 'Verify Code'}
@@ -135,11 +136,11 @@ function VerifyOtpContent() {
         </form>
 
         <div className="text-center mt-6">
-          <span className="text-xs text-white/40">Didn't receive the code? </span>
+          <span className="text-xs text-zinc-500">Didn't receive the code? </span>
           <button
             onClick={handleResend}
             disabled={loading}
-            className="text-xs text-purple-400 hover:text-purple-300 font-semibold cursor-pointer underline"
+            className="text-xs text-zinc-300 hover:text-white font-semibold cursor-pointer underline focus:outline-none"
           >
             Resend Code
           </button>
@@ -152,8 +153,8 @@ function VerifyOtpContent() {
 export default function VerifyOtpPage() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-[75vh] items-center justify-center text-white">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
+      <div className="flex min-h-[75vh] items-center justify-center bg-zinc-950 text-zinc-50 animate-pulse">
+        <div className="h-6 w-32 bg-zinc-800 rounded"></div>
       </div>
     }>
       <VerifyOtpContent />

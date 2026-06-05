@@ -29,30 +29,30 @@ export default function LandingPage() {
     <div className="flex flex-col items-center justify-center py-12">
       {/* Hero Section */}
       <section className="text-center max-w-4xl mx-auto mb-16 px-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-sm font-semibold mb-6">
-          <Sparkles className="h-4 w-4 text-purple-400" />
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 text-sm font-medium mb-6">
+          <Sparkles className="h-4 w-4 text-zinc-400" />
           <span>Vercel-compatible serverless AI roasting</span>
         </div>
-        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight mb-6 leading-tight">
-          Get Your Code and Resume <br />
-          <span className="text-gradient-orange">Roasted by Gemini AI</span>
+        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight mb-6 leading-tight text-white">
+          Get Actionable AI Feedback <br />
+          <span className="text-zinc-400">on Your Code & Resume</span>
         </h1>
-        <p className="text-lg sm:text-xl text-white/60 mb-8 max-w-2xl mx-auto">
-          Upload a project screenshot or your resume PDF. Choose your review mode—from friendly advice to brutal destruction—and get structured AI critiques instantly.
+        <p className="text-lg sm:text-xl text-zinc-400 mb-8 max-w-2xl mx-auto">
+          Upload a project and receive AI-powered reviews from multiple perspectives.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             href="/submit"
-            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-8 py-4 text-base font-semibold text-white hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-600/25 transition-all cursor-pointer"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-8 py-4 text-base font-semibold text-zinc-950 hover:bg-zinc-200 transition-all cursor-pointer"
           >
             Roast My Project
             <ArrowRight className="h-5 w-5" />
           </Link>
           <Link
             href="/resume"
-            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 px-8 py-4 text-base font-semibold text-white hover:bg-white/10 transition-all cursor-pointer"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-zinc-900 border border-zinc-800 px-8 py-4 text-base font-semibold text-zinc-100 hover:bg-zinc-800 transition-all cursor-pointer"
           >
-            <FileText className="h-5 w-5 text-orange-400" />
+            <FileText className="h-5 w-5 text-zinc-400" />
             Analyze Resume PDF
           </Link>
         </div>
@@ -61,26 +61,23 @@ export default function LandingPage() {
       {/* Feature Section */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-20 px-4">
         <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 h-24 w-24 bg-purple-600/10 rounded-bl-full blur-xl group-hover:bg-purple-600/20 transition-colors"></div>
-          <Terminal className="h-10 w-10 text-purple-400 mb-4" />
+          <Terminal className="h-10 w-10 text-zinc-400 mb-4" />
           <h3 className="text-lg font-bold text-white mb-2">5 Review Modes</h3>
-          <p className="text-sm text-white/60">
+          <p className="text-sm text-zinc-400">
             Toggle between Funny, Brutal, Recruiter, Senior Architect, and VC Investor perspectives.
           </p>
         </div>
         <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 h-24 w-24 bg-orange-600/10 rounded-bl-full blur-xl group-hover:bg-orange-600/20 transition-colors"></div>
-          <Sparkles className="h-10 w-10 text-orange-400 mb-4" />
+          <Sparkles className="h-10 w-10 text-zinc-400 mb-4" />
           <h3 className="text-lg font-bold text-white mb-2">Multimodal Gemini AI</h3>
-          <p className="text-sm text-white/60">
+          <p className="text-sm text-zinc-400">
             Gemini reads your project screenshot, auto-detects its category, and reads PDF resume texts.
           </p>
         </div>
         <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 h-24 w-24 bg-blue-600/10 rounded-bl-full blur-xl group-hover:bg-blue-600/20 transition-colors"></div>
-          <Award className="h-10 w-10 text-blue-400 mb-4" />
+          <Award className="h-10 w-10 text-zinc-400 mb-4" />
           <h3 className="text-lg font-bold text-white mb-2">Payload CMS 3.x Admin</h3>
-          <p className="text-sm text-white/60">
+          <p className="text-sm text-zinc-400">
             An admin portal to edit prompt templates on the fly, moderate projects, and view analytics.
           </p>
         </div>
@@ -89,21 +86,21 @@ export default function LandingPage() {
       {/* Interactive Mock Review Section */}
       <section className="w-full max-w-4xl mx-auto px-4 mb-12">
         <div className="text-center mb-8">
-          <h2 className="text-2xl sm:text-4xl font-bold mb-3 text-white">Witness the Destruction</h2>
-          <p className="text-sm sm:text-base text-white/50">Select a review mode below to preview a sample roast output</p>
+          <h2 className="text-2xl font-bold mb-3 text-white">Get actionable feedback for your projects</h2>
+          <p className="text-sm text-zinc-500">Select a review mode below to preview a sample analysis output</p>
         </div>
 
-        <div className="glass-panel rounded-3xl overflow-hidden border border-white/5 shadow-2xl">
+        <div className="glass-panel rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl">
           {/* Tabs */}
-          <div className="flex border-b border-white/5 bg-white/2 p-2 gap-1 overflow-x-auto">
+          <div className="flex border-b border-zinc-800 bg-zinc-950 p-2 gap-1 overflow-x-auto">
             {Object.keys(mockReviews).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setSelectedMockMode(mode)}
                 className={`rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   selectedMockMode === mode
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-                    : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+                    ? 'bg-zinc-100 text-zinc-950 shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
                 }`}
               >
                 {mode}
@@ -112,25 +109,28 @@ export default function LandingPage() {
           </div>
 
           {/* Tab Content */}
-          <div className="p-6 sm:p-8 flex flex-col md:flex-row gap-8 items-start">
-            <div className="flex flex-col items-center gap-2 justify-center w-full md:w-1/4">
-              <div className="relative flex items-center justify-center h-28 w-28 rounded-full border-4 border-orange-500/20">
-                <span className="text-4xl font-extrabold text-orange-500">{mockReviews[selectedMockMode].score}</span>
-                <span className="absolute bottom-1 text-[10px] text-white/40 uppercase tracking-widest">Score / 10</span>
-              </div>
-              <span className="text-xs font-semibold text-white/40 mt-1 uppercase tracking-widest">{selectedMockMode}</span>
+          <div className="p-6 sm:p-8 flex flex-col md:flex-row gap-8 items-stretch">
+            <div className="flex flex-col items-start gap-1 justify-center w-full md:w-1/4 border-b md:border-b-0 md:border-r border-zinc-800 pb-6 md:pb-0 md:pr-6">
+              <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">PROJECT SCORE</span>
+              <span className="text-5xl font-extrabold text-zinc-100 leading-none my-1">{mockReviews[selectedMockMode].score}.0</span>
+              <span className="text-xs font-semibold text-zinc-300">
+                {mockReviews[selectedMockMode].score >= 8 ? 'Outstanding' : mockReviews[selectedMockMode].score >= 5 ? 'Strong performance' : 'Requires review'}
+              </span>
+              <span className="text-[10px] text-zinc-500 mt-1">
+                {mockReviews[selectedMockMode].score >= 8 ? 'Top 10% of projects' : mockReviews[selectedMockMode].score >= 5 ? 'Top 35% of projects' : 'Below average'}
+              </span>
             </div>
 
             <div className="flex-1 flex flex-col gap-4">
               <div>
-                <h4 className="text-xs uppercase tracking-wider text-orange-400 font-bold mb-1">🔥 The Roast</h4>
-                <p className="text-white/90 text-sm leading-relaxed italic bg-orange-500/5 rounded-xl border border-orange-500/10 p-4">
+                <h4 className="text-xs uppercase tracking-wider text-zinc-400 font-bold mb-1.5">The Roast</h4>
+                <p className="text-zinc-300 text-sm leading-relaxed italic bg-zinc-950 border border-zinc-800 rounded-xl p-4">
                   "{mockReviews[selectedMockMode].roast}"
                 </p>
               </div>
               <div>
-                <h4 className="text-xs uppercase tracking-wider text-purple-400 font-bold mb-1">📋 Technical Review</h4>
-                <p className="text-white/70 text-sm leading-relaxed">
+                <h4 className="text-xs uppercase tracking-wider text-zinc-400 font-bold mb-1.5">Technical Review</h4>
+                <p className="text-zinc-400 text-sm leading-relaxed">
                   {mockReviews[selectedMockMode].review}
                 </p>
               </div>

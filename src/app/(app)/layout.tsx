@@ -4,7 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { AuthProvider, useAuth } from '../../context/AuthContext'
 import Link from 'next/link'
-import { LogOut, LayoutDashboard, Send, FileText, User as UserIcon, ShieldAlert } from 'lucide-react'
+import { LogOut, LayoutDashboard, Send, FileText, User as UserIcon, ShieldAlert, Flame } from 'lucide-react'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -20,11 +20,11 @@ function Navigation() {
   const { user, logout } = useAuth()
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-white/5 bg-background/50 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl text-white">
-          <span className="text-2xl animate-pulse">🔥</span>
-          <span className="tracking-tight text-gradient-purple font-extrabold">Roast My Project</span>
+        <Link href="/" className="flex items-center gap-2 font-bold text-lg text-zinc-100 hover:text-white transition-colors">
+          <Flame className="h-5 w-5 text-zinc-100" />
+          <span className="tracking-tight font-extrabold">Roast My Project</span>
         </Link>
 
         <nav className="flex items-center gap-4 sm:gap-6">
@@ -32,21 +32,21 @@ function Navigation() {
             <>
               <Link
                 href="/dashboard"
-                className="flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
               >
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden sm:inline">Dashboard</span>
               </Link>
               <Link
                 href="/submit"
-                className="flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
               >
                 <Send className="h-4 w-4" />
                 <span className="hidden sm:inline">Submit Project</span>
               </Link>
               <Link
                 href="/resume"
-                className="flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
               >
                 <FileText className="h-4 w-4" />
                 <span className="hidden sm:inline">Roast Resume</span>
@@ -55,21 +55,21 @@ function Navigation() {
                 href="/admin"
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1.5 text-sm font-medium text-purple-400 hover:text-purple-300 transition-colors"
+                className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
               >
                 <ShieldAlert className="h-4 w-4" />
                 <span className="hidden sm:inline">CMS Admin</span>
               </a>
               <Link
                 href="/profile"
-                className="flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
               >
                 <UserIcon className="h-4 w-4" />
                 <span className="hidden sm:inline">Profile</span>
               </Link>
               <button
                 onClick={logout}
-                className="flex items-center gap-1.5 rounded-lg bg-white/5 border border-white/10 px-3 py-1.5 text-sm font-medium text-orange-400 hover:bg-orange-500/10 hover:border-orange-500/20 transition-all cursor-pointer"
+                className="flex items-center gap-1.5 rounded-lg bg-zinc-900 border border-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 transition-all cursor-pointer"
               >
                 <LogOut className="h-4 w-4" />
                 <span className="hidden sm:inline">Logout</span>
@@ -78,9 +78,9 @@ function Navigation() {
           ) : (
             <Link
               href="/login"
-              className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 transition-colors shadow-lg shadow-purple-600/20 cursor-pointer"
+              className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-950 hover:bg-zinc-200 transition-colors cursor-pointer"
             >
-              Get Roasted
+              Get Started
             </Link>
           )}
         </nav>
@@ -94,10 +94,12 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0b0914] text-white">
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
-          <p className="text-sm font-medium text-purple-300/80">Igniting thrusters...</p>
+          <div className="h-1 bg-zinc-800 w-32 rounded-full overflow-hidden relative">
+            <div className="h-full bg-zinc-100 rounded-full w-1/2 animate-[pulse_1.5s_infinite]"></div>
+          </div>
+          <p className="text-xs font-semibold text-zinc-500 animate-pulse tracking-wide">Loading platform...</p>
         </div>
       </div>
     )
@@ -109,8 +111,8 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
       <main className="flex-1 container mx-auto px-4 py-8 sm:px-6 relative z-10">
         {children}
       </main>
-      <footer className="w-full border-t border-white/5 py-6 bg-background/30 text-center text-sm text-white/40">
-        <p>© {new Date().getFullYear()} Roast My Project. Built with 🔥, Gemini, & Payload 3.x.</p>
+      <footer className="w-full border-t border-zinc-800 py-6 bg-zinc-950 text-center text-xs text-zinc-500">
+        <p>© {new Date().getFullYear()} Roast My Project. Built with Gemini & Payload 3.x.</p>
       </footer>
     </>
   )

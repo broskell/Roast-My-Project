@@ -12,17 +12,20 @@ import {
   ExternalLink,
   ChevronRight,
   Plus,
-  FileText
+  FileText,
+  LayoutDashboard,
+  Clock
 } from 'lucide-react'
 import {
-  AreaChart,
-  Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer
 } from 'recharts'
+import { CardSkeleton, GraphSkeleton, ListSkeleton } from '../../../components/SkeletonLoader'
 
 interface StatProject {
   id: string
@@ -55,6 +58,14 @@ interface HistoryItem {
   timestamp: number
 }
 
+interface ActivityItem {
+  id: string
+  type: 'project_submitted' | 'review_generated' | 'resume_reviewed'
+  title: string
+  timestamp: number
+  date: string
+}
+
 interface DashboardStats {
   totalProjects: number
   totalReviews: number
@@ -63,6 +74,7 @@ interface DashboardStats {
   lowestScoringProject: StatProject | null
   recentReviews: RecentReview[]
   reviewHistory: HistoryItem[]
+  recentActivity: ActivityItem[]
 }
 
 export default function DashboardPage() {
@@ -100,7 +112,6 @@ export default function DashboardPage() {
 
     try {
       await apiClient.delete(`/api/projects/${projectId}`)
-      // Refresh dashboard data
       fetchDashboardData()
     } catch (err) {
       console.error('Failed to delete project:', err)
@@ -110,10 +121,27 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
-          <p className="text-sm text-purple-300/85">Compiling stats...</p>
+      <div className="max-w-6xl mx-auto py-4 space-y-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="space-y-2">
+            <div className="h-8 w-48 bg-zinc-800 rounded animate-pulse"></div>
+            <div className="h-4 w-72 bg-zinc-800 rounded animate-pulse"></div>
+          </div>
+          <div className="h-12 w-48 bg-zinc-850 border border-zinc-800 rounded-xl animate-pulse"></div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            <GraphSkeleton />
+          </div>
+          <div>
+            <CardSkeleton />
+          </div>
         </div>
       </div>
     )
@@ -122,11 +150,16 @@ export default function DashboardPage() {
   if (error) {
     return (
       <div className="max-w-4xl mx-auto py-12 px-4 text-center">
-        <div className="glass-panel rounded-2xl p-8 border-orange-500/20 text-orange-400">
-          <p className="text-lg font-semibold mb-4">{error}</p>
+        <div className="w-full max-w-lg mx-auto p-8 rounded-2xl border border-zinc-800 bg-zinc-950 flex flex-col items-center text-center space-y-4">
+          <div className="p-3 rounded-full bg-zinc-900 border border-zinc-850 text-zinc-400">
+            <Zap className="h-6 w-6" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-sm font-semibold text-zinc-200">{error}</h3>
+          </div>
           <button
             onClick={fetchDashboardData}
-            className="rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium px-4 py-2 transition-colors cursor-pointer"
+            className="rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-950 font-semibold px-4 py-2 text-xs transition-colors cursor-pointer"
           >
             Retry Fetching Data
           </button>
@@ -137,56 +170,72 @@ export default function DashboardPage() {
 
   const statsList = [
     {
-      title: 'Reviews Generated',
+      title: 'Total Projects',
+      value: stats?.totalProjects || 0,
+      description: 'Active uploads',
+      icon: LayoutDashboard
+    },
+    {
+      title: 'Total Reviews',
       value: stats?.totalReviews || 0,
-      description: `From ${stats?.totalProjects || 0} projects`,
-      icon: TrendingUp,
-      color: 'text-purple-400'
+      description: 'Critiques completed',
+      icon: TrendingUp
     },
     {
-      title: 'Average AI Score',
+      title: 'Average Score',
       value: stats && stats.totalReviews > 0 ? `${stats.averageScore}/10` : 'N/A',
-      description: 'Overall technical evaluation',
-      icon: Award,
-      color: 'text-blue-400'
+      description: 'Out of 10.0 scale',
+      icon: Award
     },
     {
-      title: 'Highest Scoring',
+      title: 'Best Project',
       value: stats?.highestScoringProject ? `${stats.highestScoringProject.score}/10` : 'N/A',
       description: stats?.highestScoringProject?.title || 'No reviews yet',
-      icon: Sparkles,
-      color: 'text-orange-400'
-    },
-    {
-      title: 'Lowest Scoring',
-      value: stats?.lowestScoringProject ? `${stats.lowestScoringProject.score}/10` : 'N/A',
-      description: stats?.lowestScoringProject?.title || 'No reviews yet',
-      icon: Zap,
-      color: 'text-red-400'
+      icon: Sparkles
     }
   ]
+
+  // Calculate review score ranges for the distribution chart
+  const distributionData = [
+    { range: '1-2', count: 0 },
+    { range: '3-4', count: 0 },
+    { range: '5-6', count: 0 },
+    { range: '7-8', count: 0 },
+    { range: '9-10', count: 0 },
+  ]
+
+  if (stats?.reviewHistory) {
+    stats.reviewHistory.forEach((item) => {
+      const score = item.score
+      if (score >= 1 && score <= 2) distributionData[0].count++
+      else if (score >= 3 && score <= 4) distributionData[1].count++
+      else if (score >= 5 && score <= 6) distributionData[2].count++
+      else if (score >= 7 && score <= 8) distributionData[3].count++
+      else if (score >= 9 && score <= 10) distributionData[4].count++
+    })
+  }
 
   return (
     <div className="max-w-6xl mx-auto py-4">
       {/* Upper header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Project Dashboard</h1>
-          <p className="text-sm text-white/50">Manage your project reviews, resume scores, and AI performance metrics</p>
+          <h1 className="text-3xl font-extrabold text-zinc-100 tracking-tight">Workspace</h1>
+          <p className="text-xs text-zinc-400">Manage project reviews, resume scores, and AI performance metrics</p>
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
           <Link
             href="/submit"
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 px-5 py-3 text-sm font-semibold text-white transition-colors cursor-pointer shadow-lg shadow-purple-600/15"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 px-5 py-3 text-sm font-semibold text-zinc-950 transition-colors cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             Roast Project
           </Link>
           <Link
             href="/resume"
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 px-5 py-3 text-sm font-semibold text-white transition-colors cursor-pointer"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl bg-zinc-900 border border-zinc-850 hover:bg-zinc-800 px-5 py-3 text-sm font-semibold text-zinc-100 transition-colors cursor-pointer"
           >
-            <FileText className="h-4 w-4 text-orange-400" />
+            <FileText className="h-4 w-4 text-zinc-400" />
             Roast Resume
           </Link>
         </div>
@@ -197,13 +246,13 @@ export default function DashboardPage() {
         {statsList.map((stat, idx) => {
           const Icon = stat.icon
           return (
-            <div key={idx} className="glass-panel rounded-2xl p-6 border-white/5">
+            <div key={idx} className="glass-panel rounded-2xl p-6 border-zinc-800 bg-zinc-900/40">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs uppercase tracking-wider font-bold text-white/40">{stat.title}</span>
-                <Icon className={`h-5 w-5 ${stat.color}`} />
+                <span className="text-[10px] uppercase tracking-wider font-bold text-zinc-500">{stat.title}</span>
+                <Icon className="h-5 w-5 text-zinc-400" />
               </div>
-              <p className="text-3xl font-extrabold text-white mb-1">{stat.value}</p>
-              <p className="text-xs text-white/55 truncate">{stat.description}</p>
+              <p className="text-3xl font-extrabold text-zinc-100 mb-1">{stat.value}</p>
+              <p className="text-xs text-zinc-500 truncate">{stat.description}</p>
             </div>
           )
         })}
@@ -211,93 +260,90 @@ export default function DashboardPage() {
 
       {/* Graph Section & Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-        {/* Recharts Area Chart */}
-        <div className="lg:col-span-2 glass-panel rounded-2xl p-6 border-white/5 flex flex-col justify-between min-h-[350px]">
+        {/* Recharts Bar Chart - Review Distribution */}
+        <div className="lg:col-span-2 glass-panel rounded-2xl p-6 border-zinc-800 bg-zinc-900/40 flex flex-col justify-between min-h-[350px]">
           <div>
-            <h3 className="text-lg font-bold text-white mb-1">Score History</h3>
-            <p className="text-xs text-white/40 mb-6">AI score trends over time from your project reviews</p>
+            <h3 className="text-lg font-bold text-zinc-100 mb-1">Review Distribution</h3>
+            <p className="text-xs text-zinc-500 mb-6">Grayscale representation of scores across your projects</p>
           </div>
 
           <div className="flex-1 w-full min-h-[220px]">
             {mounted && stats && stats.reviewHistory.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={stats.reviewHistory}
+                <BarChart
+                  data={distributionData}
                   margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
                 >
-                  <defs>
-                    <linearGradient id="scoreGlow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#a855f7" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#a855f7" stopOpacity={0.0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                   <XAxis
-                    dataKey="date"
-                    stroke="rgba(255,255,255,0.3)"
+                    dataKey="range"
+                    stroke="rgba(255,255,255,0.2)"
                     fontSize={11}
                     tickLine={false}
                   />
                   <YAxis
-                    stroke="rgba(255,255,255,0.3)"
+                    stroke="rgba(255,255,255,0.2)"
                     fontSize={11}
                     tickLine={false}
-                    domain={[0, 10]}
-                    tickCount={6}
+                    allowDecimals={false}
                   />
                   <Tooltip
                     contentStyle={{
-                      background: '#110c1c',
-                      borderColor: 'rgba(255,255,255,0.08)',
-                      borderRadius: '12px',
+                      background: '#18181b',
+                      borderColor: '#27272a',
+                      borderRadius: '8px',
                       color: '#fff',
                       fontSize: '12px'
                     }}
+                    cursor={{ fill: 'rgba(255,255,255,0.02)' }}
                   />
-                  <Area
-                    type="monotone"
-                    dataKey="score"
-                    stroke="#a855f7"
-                    strokeWidth={2.5}
-                    fillOpacity={1}
-                    fill="url(#scoreGlow)"
+                  <Bar
+                    dataKey="count"
+                    fill="#e4e4e7"
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={48}
                   />
-                </AreaChart>
+                </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-full items-center justify-center text-sm text-white/30 italic">
-                {mounted ? 'Run a project roast to display score history graphs' : 'Preparing graphs...'}
+              <div className="flex h-full items-center justify-center text-xs text-zinc-500 italic">
+                {mounted ? 'Submit a project to populate the distribution graph' : 'Preparing distribution metrics...'}
               </div>
             )}
           </div>
         </div>
 
-        {/* Quick Actions / Tips */}
-        <div className="glass-panel rounded-2xl p-6 border-white/5 flex flex-col justify-between">
+        {/* Recent Activity Timeline Feed */}
+        <div className="glass-panel rounded-2xl p-6 border-zinc-800 bg-zinc-900/40 flex flex-col justify-between min-h-[350px]">
           <div>
-            <h3 className="text-lg font-bold text-white mb-2">AI Critique Tips</h3>
-            <p className="text-xs text-white/50 mb-4">How to optimize your score and avoid severe roasting:</p>
-            <ul className="space-y-3.5 text-xs text-white/70">
-              <li className="flex items-start gap-2">
-                <span className="text-purple-400 font-bold mt-0.5">•</span>
-                <span>Ensure your project screenshots are clean, high-resolution, and clearly showcase the main landing features.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-orange-400 font-bold mt-0.5">•</span>
-                <span>Select **Senior Developer Review** for deeper technical design suggestions, rather than simple visual jokes.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-blue-400 font-bold mt-0.5">•</span>
-                <span>Add valid GitHub links. The AI will critique your codebase organization based on descriptions and metadata!</span>
-              </li>
-            </ul>
+            <h3 className="text-lg font-bold text-zinc-100 mb-1">Recent Activity</h3>
+            <p className="text-xs text-zinc-500 mb-6">Workspace event timeline</p>
+            
+            <div className="space-y-4 max-h-[200px] overflow-y-auto pr-1">
+              {stats && stats.recentActivity && stats.recentActivity.length > 0 ? (
+                stats.recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex gap-3 text-xs">
+                    <div className="flex flex-col items-center">
+                      <div className="h-2 w-2 rounded-full bg-zinc-400 mt-1.5 shrink-0"></div>
+                      <div className="w-[1px] flex-1 bg-zinc-800 my-1"></div>
+                    </div>
+                    <div className="space-y-0.5 pb-2">
+                      <p className="text-zinc-200 font-medium leading-tight">{activity.title}</p>
+                      <p className="text-[10px] text-zinc-500">{activity.date}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-zinc-500 italic">No workspace activity yet.</p>
+              )}
+            </div>
           </div>
-          <div className="pt-6 border-t border-white/5">
+          <div className="pt-4 border-t border-zinc-800">
             <Link
               href="/profile"
-              className="flex items-center justify-between text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors"
+              className="flex items-center justify-between text-xs font-semibold text-zinc-400 hover:text-zinc-200 transition-colors"
             >
-              Manage account settings
+              Account settings
               <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
@@ -305,9 +351,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent submissions list */}
-      <div className="glass-panel rounded-2xl p-6 border-white/5">
-        <h3 className="text-lg font-bold text-white mb-1">Recent Project Submissions</h3>
-        <p className="text-xs text-white/40 mb-6">View previously generated reviews, trigger new reviews in other modes, or delete projects</p>
+      <div className="glass-panel rounded-2xl p-6 border-zinc-800 bg-zinc-900/40">
+        <h3 className="text-lg font-bold text-zinc-100 mb-1">Recent Projects</h3>
+        <p className="text-xs text-zinc-500 mb-6">Manage projects, trigger AI reviews, or view scores</p>
 
         {stats && stats.recentReviews.length > 0 ? (
           <div className="space-y-4">
@@ -316,11 +362,11 @@ export default function DashboardPage() {
               return (
                 <div
                   key={review.id}
-                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-white/2 border border-white/5 hover:border-white/10 transition-colors"
+                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-zinc-950/40 border border-zinc-800/80 hover:border-zinc-700/80 transition-colors"
                 >
                   <div className="flex items-center gap-4">
                     {/* Project Image */}
-                    <div className="h-16 w-24 rounded-lg overflow-hidden border border-white/5 relative bg-white/5 shrink-0">
+                    <div className="h-16 w-24 rounded-lg overflow-hidden border border-zinc-800 relative bg-zinc-900 shrink-0">
                       <img
                         src={review.project.screenshotUrl}
                         alt={review.project.title}
@@ -329,17 +375,17 @@ export default function DashboardPage() {
                     </div>
                     {/* Details */}
                     <div>
-                      <h4 className="font-bold text-white text-base leading-tight">
+                      <h4 className="font-bold text-zinc-200 text-base leading-tight">
                         {review.project.title}
                       </h4>
-                      <div className="flex flex-wrap items-center gap-2 mt-1">
-                        <span className="rounded bg-purple-500/10 px-2 py-0.5 text-[10px] font-semibold text-purple-300">
+                      <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                        <span className="rounded bg-zinc-900 border border-zinc-800 px-2 py-0.5 text-[10px] font-medium text-zinc-400">
                           {review.project.category}
                         </span>
-                        <span className="rounded bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-300">
+                        <span className="rounded bg-zinc-900 border border-zinc-800 px-2 py-0.5 text-[10px] font-medium text-zinc-400">
                           {review.mode}
                         </span>
-                        <span className="text-[10px] text-white/40">
+                        <span className="text-[10px] text-zinc-500">
                           {new Date(review.createdAt).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
@@ -353,23 +399,23 @@ export default function DashboardPage() {
                   {/* Actions */}
                   <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-white/35 font-bold uppercase tracking-wider">Score:</span>
-                      <span className={`text-xl font-extrabold ${review.score >= 7 ? 'text-green-400' : review.score >= 5 ? 'text-orange-400' : 'text-red-400'}`}>
-                        {review.score}/10
+                      <span className="text-xs text-zinc-500 font-medium uppercase tracking-wider">Score:</span>
+                      <span className="text-xl font-extrabold text-zinc-100">
+                        {review.score}.0/10
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/results/project/${review.project.id}`}
-                        className="flex items-center gap-1 rounded-lg bg-purple-600/15 border border-purple-500/10 px-3 py-1.5 text-xs font-semibold text-purple-300 hover:bg-purple-600 hover:text-white transition-all cursor-pointer"
+                        className="flex items-center gap-1 rounded-lg bg-zinc-900 border border-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:bg-zinc-100 hover:text-zinc-950 transition-all cursor-pointer"
                       >
                         View Review
                         <ExternalLink className="h-3 w-3" />
                       </Link>
                       <button
                         onClick={(e) => handleDeleteProject(review.project!.id, e)}
-                        className="p-2 rounded-lg bg-red-500/10 border border-red-500/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/30 transition-colors cursor-pointer"
+                        className="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-red-400 hover:border-red-950 transition-colors cursor-pointer"
                         title="Delete project"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -381,11 +427,11 @@ export default function DashboardPage() {
             })}
           </div>
         ) : (
-          <div className="text-center py-10 border border-dashed border-white/10 rounded-2xl">
-            <p className="text-white/40 text-sm mb-4">No projects submitted yet.</p>
+          <div className="text-center py-10 border border-dashed border-zinc-850 rounded-2xl bg-zinc-900/10">
+            <p className="text-zinc-500 text-xs mb-4">No projects submitted yet.</p>
             <Link
               href="/submit"
-              className="inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 px-5 py-2.5 text-xs font-semibold text-white transition-colors cursor-pointer shadow-lg shadow-purple-600/15"
+              className="inline-flex items-center gap-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 px-5 py-2.5 text-xs font-semibold text-zinc-950 transition-colors cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5" />
               Submit Your First Project

@@ -12,6 +12,7 @@ import { Projects } from './src/collections/Projects'
 import { Reviews } from './src/collections/Reviews'
 import { Resumes } from './src/collections/Resumes'
 import { Prompts } from './src/collections/Prompts'
+import { GeminiDebugLogs } from './src/collections/GeminiDebugLogs'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -36,6 +37,7 @@ export default buildConfig({
     Reviews,
     Resumes,
     Prompts,
+    GeminiDebugLogs,
   ],
   editor: lexicalEditor({}),
   secret: process.env.PAYLOAD_SECRET || 'd1a7b4f593e820c78a0f9b6e4d3c2b1a5e6f7d8c9b0a1b2c3d4e5f6',
