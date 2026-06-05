@@ -10,63 +10,58 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Phone number is required' }, { status: 400 })
     }
 
-    // 1. Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString()
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString() // 5 minutes expiration
-
-    // 2. Save to database using Payload local API
-    const payload = await getPayload({ config })
-    
-    // Check if there's any existing unexpired/expired OTP for this number and delete it to prevent bloat
-    await payload.delete({
-      collection: 'otp_verifications',
-      where: {
-        phone: { equals: phone }
-      }
-    })
-
-    // Save the new OTP
-    await payload.create({
-      collection: 'otp_verifications',
-      data: {
-        phone,
-        otp,
-        expiresAt,
-        verified: false,
-      }
-    })
-
     const twilioSid = process.env.TWILIO_ACCOUNT_SID
     const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN
-    const twilioPhone = process.env.TWILIO_PHONE_NUMBER
-    
-    let isMockMode = false
+    const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID
+
+    let isMockMode = !twilioSid || 
+                      twilioSid.startsWith('AC_mock') || 
+                      !twilioAuthToken || 
+                      !verifyServiceSid || 
+                      verifyServiceSid.startsWith('VA_mock')
     let twilioError = ''
 
-    const missing: string[] = []
-    if (!twilioSid) missing.push('TWILIO_ACCOUNT_SID')
-    if (!twilioAuthToken) missing.push('TWILIO_AUTH_TOKEN')
-    if (!twilioPhone) missing.push('TWILIO_PHONE_NUMBER')
-
-    if (missing.length > 0) {
-      console.log(`[MOCK MODE Fallback] Missing Twilio environment variable(s): ${missing.join(', ')}`)
-      isMockMode = true
-    } else {
+    if (!isMockMode) {
       try {
         const client = twilio(twilioSid, twilioAuthToken)
-        await client.messages.create({
-          body: `Your Roast My Project verification code is: ${otp}. Valid for 5 minutes.`,
-          from: twilioPhone,
+        await client.verify.v2.services(verifyServiceSid!).verifications.create({
           to: phone,
+          channel: 'sms',
         })
       } catch (err: any) {
-        console.error('Twilio sending failed, falling back to mock mode:', err.message)
+        console.error('Twilio Verify sending failed, falling back to mock mode:', err.message)
         isMockMode = true
         twilioError = err.message
       }
     }
 
     if (isMockMode) {
+      // 1. Generate 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString()
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString() // 5 minutes expiration
+
+      // 2. Save to database using Payload local API
+      const payload = await getPayload({ config })
+      
+      // Check if there's any existing unexpired/expired OTP for this number and delete it to prevent bloat
+      await payload.delete({
+        collection: 'otp_verifications',
+        where: {
+          phone: { equals: phone }
+        }
+      })
+
+      // Save the new OTP
+      await payload.create({
+        collection: 'otp_verifications',
+        data: {
+          phone,
+          otp,
+          expiresAt,
+          verified: false,
+        }
+      })
+
       console.log('\n=============================================')
       console.log(`[MOCK MODE OTP] SMS verification code sent to ${phone}`)
       console.log(`CODE: ${otp}`)
@@ -83,7 +78,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'SMS sent successfully',
+      message: 'SMS sent successfully via Twilio Verify',
       mockMode: false
     })
 

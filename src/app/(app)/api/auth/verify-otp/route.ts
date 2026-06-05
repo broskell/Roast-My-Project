@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '../../../../../../payload.config'
 import { signToken } from '../../../../../utils/auth'
+import twilio from 'twilio'
 
 export async function POST(req: Request) {
   try {
@@ -12,38 +13,64 @@ export async function POST(req: Request) {
 
     const payload = await getPayload({ config })
 
-    // Find verification code
-    const verifications = await payload.find({
-      collection: 'otp_verifications',
-      where: {
-        and: [
-          { phone: { equals: phone } },
-          { otp: { equals: otp } },
-          { verified: { equals: false } },
-        ]
+    const twilioSid = process.env.TWILIO_ACCOUNT_SID
+    const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN
+    const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID
+
+    const isMockMode = !twilioSid || 
+                      twilioSid.startsWith('AC_mock') || 
+                      !twilioAuthToken || 
+                      !verifyServiceSid || 
+                      verifyServiceSid.startsWith('VA_mock')
+
+    if (!isMockMode) {
+      try {
+        const client = twilio(twilioSid, twilioAuthToken)
+        const check = await client.verify.v2.services(verifyServiceSid!).verificationChecks.create({
+          to: phone,
+          code: otp,
+        })
+        if (check.status !== 'approved') {
+          return NextResponse.json({ error: 'Invalid or expired verification code' }, { status: 400 })
+        }
+      } catch (err: any) {
+        console.error('Twilio Verify check failed:', err.message)
+        return NextResponse.json({ error: `Verification check failed: ${err.message}` }, { status: 400 })
       }
-    })
+    } else {
+      // Find verification code
+      const verifications = await payload.find({
+        collection: 'otp_verifications',
+        where: {
+          and: [
+            { phone: { equals: phone } },
+            { otp: { equals: otp } },
+            { verified: { equals: false } },
+          ]
+        }
+      })
 
-    if (verifications.docs.length === 0) {
-      return NextResponse.json({ error: 'Invalid or already used verification code' }, { status: 400 })
-    }
-
-    const verification = verifications.docs[0]
-
-    // Verify expiration
-    const expiresAt = new Date(verification.expiresAt).getTime()
-    if (Date.now() > expiresAt) {
-      return NextResponse.json({ error: 'Verification code has expired' }, { status: 400 })
-    }
-
-    // Mark OTP as verified
-    await payload.update({
-      collection: 'otp_verifications',
-      id: verification.id,
-      data: {
-        verified: true,
+      if (verifications.docs.length === 0) {
+        return NextResponse.json({ error: 'Invalid or already used verification code' }, { status: 400 })
       }
-    })
+
+      const verification = verifications.docs[0]
+
+      // Verify expiration
+      const expiresAt = new Date(verification.expiresAt).getTime()
+      if (Date.now() > expiresAt) {
+        return NextResponse.json({ error: 'Verification code has expired' }, { status: 400 })
+      }
+
+      // Mark OTP as verified
+      await payload.update({
+        collection: 'otp_verifications',
+        id: verification.id,
+        data: {
+          verified: true,
+        }
+      })
+    }
 
     // Find or create user
     const users = await payload.find({
