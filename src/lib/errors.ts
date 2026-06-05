@@ -11,8 +11,17 @@ export function classifyGeminiError(err: unknown): { errorType: string; errorMes
     errorType = 'INVALID_MODEL'
   } else if (status === 403 || message.includes('API key not valid') || message.includes('API_KEY_INVALID') || message.includes('API key expired') || message.includes('invalid api key')) {
     errorType = 'INVALID_API_KEY'
-  } else if (status === 429) {
-    if (message.includes('quota') || message.includes('Quota') || message.includes('limit') || message.includes('Limit')) {
+  } else if (
+    status === 429 ||
+    message.includes('429') ||
+    message.includes('RESOURCE_EXHAUSTED') ||
+    message.includes('Resource has been exhausted') ||
+    message.includes('Quota exceeded') ||
+    message.includes('quota exceeded') ||
+    message.includes('rate limit') ||
+    message.includes('Rate limit')
+  ) {
+    if (message.includes('quota') || message.includes('Quota') || message.includes('exhausted') || message.includes('EXHAUSTED')) {
       errorType = 'QUOTA_EXCEEDED'
     } else {
       errorType = 'RATE_LIMIT'

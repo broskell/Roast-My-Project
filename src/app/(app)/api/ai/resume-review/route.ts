@@ -2,33 +2,14 @@ import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '../../../../../../payload.config'
 import { getAuthenticatedUser } from '../../../../../utils/auth'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import axios from 'axios'
 import crypto from 'crypto'
 
 import { validateEnv } from '../../../../../lib/env'
-import { getBestAvailableModel } from '../../../../../config/gemini'
+import { callAI } from '../../../../../lib/gemini'
 import { classifyGeminiError } from '../../../../../lib/errors'
 import { validateResumeReview } from '../../../../../types/ai'
 import { startTimer, endTimer } from '../../../../../lib/timing'
-
-const TIMEOUT_MS = 30000
-
-function timeout(ms: number) {
-  return new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error(`Gemini request timed out after ${ms}ms`)), ms)
-  )
-}
-
-function recoverJson(rawText: string): Record<string, unknown> {
-  const firstBrace = rawText.indexOf('{')
-  const lastBrace = rawText.lastIndexOf('}')
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    const extracted = rawText.substring(firstBrace, lastBrace + 1)
-    return JSON.parse(extracted) as Record<string, unknown>
-  }
-  throw new Error('No JSON object boundaries found in raw response')
-}
 
 export async function POST(req: Request) {
   const totalTimer = startTimer()
@@ -47,7 +28,6 @@ export async function POST(req: Request) {
       return NextResponse.json({
         requestId,
         stage: 'validation',
-        errorType: 'INVALID_API_KEY',
         error: 'Unauthorized'
       }, { status: 401 })
     }
@@ -61,7 +41,6 @@ export async function POST(req: Request) {
       return NextResponse.json({
         requestId,
         stage: 'validation',
-        errorType: 'VALIDATION_ERROR',
         error: 'Resume URL is required'
       }, { status: 400 })
     }
@@ -81,8 +60,7 @@ export async function POST(req: Request) {
       console.error(`[RESUME-ROAST][STEP-2][PROMPT][${requestId}] Prompt template not found for Resume Review`)
       return NextResponse.json({
         requestId,
-        stage: 'prompt-loading',
-        errorType: 'VALIDATION_ERROR',
+        stage: 'validation',
         error: 'System prompt template not found for Resume Review'
       }, { status: 500 })
     }
@@ -90,14 +68,7 @@ export async function POST(req: Request) {
     const promptTemplate = promptsResult.docs[0]
     const promptText = promptTemplate.promptText
 
-    // Log prompt preview
-    console.log(`[RESUME-ROAST][PROMPT-PREVIEW]`, {
-      reviewMode: 'Resume Review',
-      promptLength: promptText.length,
-      preview: promptText.substring(0, 500)
-    })
-
-    // 3. Download and convert PDF to base64
+    // 3. Download resume PDF
     console.log(`[RESUME-ROAST][STEP-3][DOWNLOAD][${requestId}] Downloading PDF resume from URL: ${resumeUrl}`)
     let base64Pdf = ''
     let buffer: Buffer
@@ -116,214 +87,81 @@ export async function POST(req: Request) {
       return NextResponse.json({
         requestId,
         stage: 'image-download',
-        errorType: 'NETWORK_ERROR',
         error: `Failed to retrieve resume PDF from storage: ${errorObj?.message || err}`
-      }, { status: 500 })
+      }, { status: 502 })
     }
     const downloadDuration = endTimer(downloadTimer)
 
-    // Save debug log if enabled
-    const enableDebug = process.env.ENABLE_GEMINI_DEBUG === 'true'
-    let debugLogId = ''
-    if (enableDebug) {
-      try {
-        const debugLog = await payload.create({
-          collection: 'gemini_debug_logs',
-          data: {
-            requestId,
-            projectId: 'resume-project',
-            reviewMode: 'Resume Review',
-            promptLength: promptText.length,
-            imageBytes: buffer.length,
-            parseSuccess: false
-          }
-        })
-        debugLogId = String(debugLog.id)
-      } catch (dbErr: unknown) {
-        const errorObj = dbErr as { message?: string } | null | undefined
-        console.error(`[RESUME-ROAST][DATABASE][${requestId}] Failed to create debug log:`, errorObj?.message || dbErr)
-      }
-    }
-
-    // 4. Resolve cached working model & request review
-    const modelName = await getBestAvailableModel()
-    console.log(`[RESUME-ROAST][STEP-4][GEMINI][${requestId}] Discovered/Cached model to use: ${modelName}`)
-
-    const apiKey = process.env.GEMINI_API_KEY
-    if (!apiKey) {
-      console.error(`[RESUME-ROAST][STEP-4][GEMINI][${requestId}] Gemini API key is missing`)
+    // 3.5 Validate PDF file details
+    console.log(`[RESUME-ROAST][STEP-3.5][VALIDATE-PDF][${requestId}] Validating PDF magic bytes and size`)
+    
+    // Check max size: 5MB limit
+    if (buffer.length > 5 * 1024 * 1024) {
+      console.error(`[RESUME-ROAST][STEP-3.5][VALIDATE-PDF][${requestId}] File size exceeds limit: ${buffer.length} bytes`)
       return NextResponse.json({
         requestId,
-        stage: 'gemini-request',
-        errorType: 'INVALID_API_KEY',
-        error: 'Gemini API Key is not configured'
-      }, { status: 500 })
+        stage: 'pdf-validation',
+        error: 'Resume PDF size must be less than 5MB'
+      }, { status: 400 })
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const jsonEnforcement = `
-\nReturn valid JSON only.
-No markdown.
-No explanations.
-No code fences.
-`
-    const systemPrompt = promptText + jsonEnforcement
-    const userPrompt = 'Analyze the attached resume PDF document based on the system instructions, score it out of 100, and output the response matching the specified JSON schema.'
+    // Check PDF magic bytes (should start with '%PDF')
+    const hasPdfHeader = buffer.length >= 4 && buffer.toString('utf-8', 0, 4) === '%PDF'
+    if (!hasPdfHeader) {
+      console.error(`[RESUME-ROAST][STEP-3.5][VALIDATE-PDF][${requestId}] Magic bytes check failed. Buffer begins with:`, buffer.toString('utf-8', 0, 10))
+      return NextResponse.json({
+        requestId,
+        stage: 'pdf-validation',
+        error: 'The uploaded file is not a valid PDF document. Please upload a PDF file.'
+      }, { status: 400 })
+    }
 
-    const contentParts = [
-      userPrompt,
-      systemPrompt,
-      {
-        inlineData: {
+    // 4. Call shared Gemini service
+    let parsed: unknown = null
+    let aiProvider: string = 'gemini'
+    let modelUsed: string = ''
+    try {
+      const result = await callAI({
+        requestId,
+        reviewMode: 'Resume Review',
+        systemPrompt: promptText,
+        userPrompt: 'Analyze the attached resume PDF document based on the system instructions, score it out of 100, and output the response matching the specified JSON schema.',
+        media: {
           data: base64Pdf,
           mimeType: 'application/pdf',
-        }
-      }
-    ]
-
-    let responseText = ''
-    const geminiCallStart = startTimer()
-
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName })
-      console.log(`[RESUME-ROAST][STEP-4][GEMINI][${requestId}] Calling model '${modelName}' with 30s timeout`)
-
-      const geminiPromise = model.generateContent(contentParts).then(res => res.response.text())
-      responseText = await Promise.race([geminiPromise, timeout(TIMEOUT_MS)])
+        },
+        projectId: 'resume-project'
+      })
+      parsed = result.data.parsed
+      aiProvider = result.provider
+      modelUsed = result.data.modelUsed
     } catch (err: unknown) {
-      const { errorType, errorMessage } = classifyGeminiError(err)
-      console.error(`[RESUME-ROAST][STEP-4][GEMINI][${requestId}] Gemini API execution error:`, errorMessage)
-      
-      if (enableDebug && debugLogId) {
-        await payload.update({
-          collection: 'gemini_debug_logs',
-          id: debugLogId,
-          data: {
-            modelUsed: modelName,
-            errorType,
-            errorMessage
-          }
-        }).catch(() => {})
-      }
-
+      const { errorMessage } = classifyGeminiError(err)
+      console.error(`[RESUME-ROAST][STEP-4][AI-COMPLETION][${requestId}] AI service execution error:`, errorMessage)
       const statusObj = err as { status?: number } | null | undefined
       return NextResponse.json({
         requestId,
         stage: 'gemini-request',
-        errorType,
-        error: `Gemini AI failed to process resume: ${errorMessage}`
+        error: `AI analysis failed: ${errorMessage}`
       }, { status: statusObj?.status || 502 })
     }
 
-    const geminiDuration = endTimer(geminiCallStart)
-    console.log(`[RESUME-ROAST][STEP-4][GEMINI][${requestId}] Raw Gemini response received (length: ${responseText.length}, duration: ${geminiDuration}ms)`)
-
-    // Save response to debug log if debugging is enabled
-    if (enableDebug && debugLogId) {
-      await payload.update({
-        collection: 'gemini_debug_logs',
-        id: debugLogId,
-        data: {
-          modelUsed: modelName,
-          rawResponse: responseText
-        }
-      }).catch(() => {})
-    }
-
-    // 5. Parse response JSON
-    console.log(`[RESUME-ROAST][STEP-5][PARSE][${requestId}] Sanitizing response and parsing JSON`)
-    let reviewData: unknown = null
-    const parseStart = startTimer()
-
-    let cleanJson = responseText.trim()
-    
-    // Strip leading text by locating the first bracket
-    const firstBraceIndex = cleanJson.indexOf('{')
-    if (firstBraceIndex > 0) {
-      cleanJson = cleanJson.substring(firstBraceIndex)
-    }
-    
-    cleanJson = cleanJson
-      .replace(/```json/gi, '')
-      .replace(/```/g, '')
-      .trim()
-
-    try {
-      reviewData = JSON.parse(cleanJson)
-    } catch (initialErr: unknown) {
-      const errorObj = initialErr as { message?: string } | null | undefined
-      console.warn(`[RESUME-ROAST][STEP-5][PARSE][${requestId}] Initial JSON.parse failed. Retrying fallback recovery:`, errorObj?.message || initialErr)
-      try {
-        reviewData = recoverJson(responseText)
-      } catch (recoveryErr: unknown) {
-        const recoveryObj = recoveryErr as { message?: string } | null | undefined
-        const parseErrorMessage = `JSON parsing failed: ${errorObj?.message || initialErr}`
-        console.error(`[RESUME-ROAST][STEP-5][PARSE][${requestId}] JSON parsing recovery failed:`, recoveryObj?.message || recoveryErr)
-        
-        if (enableDebug && debugLogId) {
-          await payload.update({
-            collection: 'gemini_debug_logs',
-            id: debugLogId,
-            data: {
-              parseError: parseErrorMessage,
-              errorType: 'UNKNOWN',
-              errorMessage: parseErrorMessage
-            }
-          }).catch(() => {})
-        }
-
-        return NextResponse.json({
-          requestId,
-          stage: 'json-parse',
-          errorType: 'UNKNOWN',
-          error: parseErrorMessage,
-          rawText: responseText
-        }, { status: 502 })
-      }
-    }
-
-    const parseDuration = endTimer(parseStart)
-
-    // Validate parsed JSON fields against ResumeReview schema
+    // 5. Validate response schema
     console.log(`[RESUME-ROAST][STEP-5][PARSE][${requestId}] Validating response schema`)
-    if (!validateResumeReview(reviewData)) {
+    if (!validateResumeReview(parsed)) {
       const errorMsg = 'Gemini response missing required fields (roast, score, suggestions)'
       console.error(`[RESUME-ROAST][STEP-5][PARSE][${requestId}] Schema validation failed: ${errorMsg}`)
-      
-      if (enableDebug && debugLogId) {
-        await payload.update({
-          collection: 'gemini_debug_logs',
-          id: debugLogId,
-          data: {
-            parseError: errorMsg,
-            errorType: 'VALIDATION_ERROR',
-            errorMessage: errorMsg
-          }
-        }).catch(() => {})
-      }
-
       return NextResponse.json({
         requestId,
         stage: 'schema-validation',
-        errorType: 'VALIDATION_ERROR',
-        error: errorMsg,
-        rawText: responseText
+        error: errorMsg
       }, { status: 502 })
-    }
-
-    // Success! Update debug log success flag
-    if (enableDebug && debugLogId) {
-      await payload.update({
-        collection: 'gemini_debug_logs',
-        id: debugLogId,
-        data: { parseSuccess: true }
-      }).catch(() => {})
     }
 
     // 6. Save the new resume review
     console.log(`[RESUME-ROAST][STEP-6][DATABASE][${requestId}] Saving review to database`)
     const dbSaveStart = startTimer()
-    const { roast, score, suggestions } = reviewData
+    const { roast, score, suggestions } = parsed
 
     const formattedSuggestions = suggestions.map((s: unknown) => {
       const item = s as { suggestion?: string } | null | undefined
@@ -339,6 +177,9 @@ No code fences.
         suggestions: formattedSuggestions,
         score: Number(score),
         user: user.id,
+        provider: aiProvider,
+        modelUsed,
+        requestId,
       }
     })
 
@@ -349,10 +190,7 @@ No code fences.
     console.log(`[RESUME-ROAST][STEP-6][DATABASE][${requestId}] Success metrics:`, {
       reviewSaved: true,
       reviewId: resumeDoc.id,
-      responseLength: responseText.length,
       downloadTime: `${downloadDuration}ms`,
-      parseTime: `${parseDuration}ms`,
-      geminiExecutionTime: `${geminiDuration}ms`,
       databaseSaveTime: `${dbDuration}ms`,
       totalRequestTime: `${totalDuration}ms`
     })
@@ -369,12 +207,11 @@ No code fences.
     })
 
   } catch (err: unknown) {
-    const { errorType, errorMessage } = classifyGeminiError(err)
+    const { errorMessage } = classifyGeminiError(err)
     console.error(`[RESUME-ROAST][CRITICAL][${requestId}] Unhandled pipeline exception:`, err)
     return NextResponse.json({
       requestId,
       stage: 'database-save',
-      errorType,
       error: errorMessage || 'Internal Server Error'
     }, { status: 500 })
   }

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Sparkles, Terminal, ShieldAlert, Award, FileText } from 'lucide-react'
+import { Terminal, FileText, Search, TrendingUp, Flame } from 'lucide-react'
 
 export default function LandingPage() {
   const [selectedMockMode, setSelectedMockMode] = useState('Funny Roast')
@@ -26,81 +26,126 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center py-12">
+    <div className="flex flex-col items-center justify-center py-20 sm:py-28 space-y-24 max-w-6xl mx-auto px-4 sm:px-6">
+      
       {/* Hero Section */}
-      <section className="text-center max-w-4xl mx-auto mb-16 px-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 text-sm font-medium mb-6">
-          <Sparkles className="h-4 w-4 text-zinc-400" />
-          <span>Vercel-compatible serverless AI roasting</span>
+      <section className="text-center space-y-10 max-w-3xl mx-auto mt-4">
+        <div className="space-y-6">
+          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight opacity-0 animate-fade-in-up">
+            Get Actionable AI Feedback <br />
+            <span className="text-zinc-500">on Your Code & Resume</span>
+          </h1>
+          <p className="text-base sm:text-lg text-zinc-400 max-w-2xl mx-auto leading-relaxed opacity-0 animate-fade-in-up animation-delay-100">
+            Upload your project or resume for critical multi-perspective reviews, or validate your startup concepts with search-grounded market intelligence.
+          </p>
         </div>
-        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight mb-6 leading-tight text-white">
-          Get Actionable AI Feedback <br />
-          <span className="text-zinc-400">on Your Code & Resume</span>
-        </h1>
-        <p className="text-lg sm:text-xl text-zinc-400 mb-8 max-w-2xl mx-auto">
-          Upload a project and receive AI-powered reviews from multiple perspectives.
-        </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6 opacity-0 animate-fade-in-up animation-delay-200">
           <Link
             href="/submit"
-            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-8 py-4 text-base font-semibold text-zinc-950 hover:bg-zinc-200 transition-all cursor-pointer"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-8 py-4 text-base font-semibold text-zinc-950 hover:bg-zinc-200 transition-all cursor-pointer shadow-sm"
           >
+            <Flame className="h-5 w-5 text-zinc-950" />
             Roast My Project
-            <ArrowRight className="h-5 w-5" />
           </Link>
           <Link
             href="/resume"
             className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-zinc-900 border border-zinc-800 px-8 py-4 text-base font-semibold text-zinc-100 hover:bg-zinc-800 transition-all cursor-pointer"
           >
             <FileText className="h-5 w-5 text-zinc-400" />
-            Analyze Resume PDF
+            Roast Resume
+          </Link>
+          <Link
+            href="/idea-research"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-zinc-900 border border-zinc-800 px-8 py-4 text-base font-semibold text-zinc-100 hover:bg-zinc-800 transition-all cursor-pointer"
+          >
+            <Search className="h-5 w-5 text-zinc-400" />
+            Idea Research
           </Link>
         </div>
       </section>
 
-      {/* Feature Section */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-20 px-4">
-        <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
-          <Terminal className="h-10 w-10 text-zinc-400 mb-4" />
-          <h3 className="text-lg font-bold text-white mb-2">5 Review Modes</h3>
-          <p className="text-sm text-zinc-400">
-            Toggle between Funny, Brutal, Recruiter, Senior Architect, and VC Investor perspectives.
-          </p>
+      {/* Feature Grid */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+        {/* 1. Idea Intelligence */}
+        <div className="bg-zinc-900/30 border border-zinc-800 hover:border-zinc-600 rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between group min-h-[180px]">
+          <div className="space-y-4">
+            <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-xl w-fit text-zinc-400 group-hover:text-zinc-100 transition-colors">
+              <Search className="h-6 w-6" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-white">Idea Intelligence</h3>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                Validate startup concepts, identify direct/indirect competitors, and explore business viability.
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
-          <Sparkles className="h-10 w-10 text-zinc-400 mb-4" />
-          <h3 className="text-lg font-bold text-white mb-2">Multimodal Gemini AI</h3>
-          <p className="text-sm text-zinc-400">
-            Gemini reads your project screenshot, auto-detects its category, and reads PDF resume texts.
-          </p>
+
+        {/* 2. Project Review */}
+        <div className="bg-zinc-900/30 border border-zinc-800 hover:border-zinc-600 rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between group min-h-[180px]">
+          <div className="space-y-4">
+            <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-xl w-fit text-zinc-400 group-hover:text-zinc-100 transition-colors">
+              <Terminal className="h-6 w-6" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-white">Project Review</h3>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                Get critical technical audits, design critiques, and UX feedback from multiple custom perspectives.
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
-          <Award className="h-10 w-10 text-zinc-400 mb-4" />
-          <h3 className="text-lg font-bold text-white mb-2">Payload CMS 3.x Admin</h3>
-          <p className="text-sm text-zinc-400">
-            An admin portal to edit prompt templates on the fly, moderate projects, and view analytics.
-          </p>
+
+        {/* 3. Resume Review */}
+        <div className="bg-zinc-900/30 border border-zinc-800 hover:border-zinc-600 rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between group min-h-[180px]">
+          <div className="space-y-4">
+            <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-xl w-fit text-zinc-400 group-hover:text-zinc-100 transition-colors">
+              <FileText className="h-6 w-6" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-white">Resume Review</h3>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                Optimize your professional profile with deep ATS-focused keyphrase checks and formatting recommendations.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Market Research */}
+        <div className="bg-zinc-900/30 border border-zinc-800 hover:border-zinc-600 rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between group min-h-[180px]">
+          <div className="space-y-4">
+            <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-xl w-fit text-zinc-400 group-hover:text-zinc-100 transition-colors">
+              <TrendingUp className="h-6 w-6" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-white">Market Research</h3>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                Ground your planning with real-world data, failure reasons, success factors, and opportunity sizing.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Interactive Mock Review Section */}
-      <section className="w-full max-w-4xl mx-auto px-4 mb-12">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold mb-3 text-white">Get actionable feedback for your projects</h2>
-          <p className="text-sm text-zinc-500">Select a review mode below to preview a sample analysis output</p>
+      <section className="w-full space-y-6">
+        <div className="text-center space-y-1.5">
+          <h2 className="text-2xl font-bold text-white">Actionable Feedback for Builders</h2>
+          <p className="text-sm text-zinc-500">Preview a sample evaluation output by selecting a review perspective</p>
         </div>
 
-        <div className="glass-panel rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl">
+        <div className="border border-zinc-800 bg-zinc-900/20 rounded-2xl overflow-hidden shadow-sm">
           {/* Tabs */}
-          <div className="flex border-b border-zinc-800 bg-zinc-950 p-2 gap-1 overflow-x-auto">
+          <div className="flex border-b border-zinc-800 bg-zinc-950/80 p-2 gap-1 overflow-x-auto">
             {Object.keys(mockReviews).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setSelectedMockMode(mode)}
                 className={`rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   selectedMockMode === mode
-                    ? 'bg-zinc-100 text-zinc-950 shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
+                    ? 'bg-zinc-100 text-zinc-950'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
                 }`}
               >
                 {mode}
@@ -114,18 +159,18 @@ export default function LandingPage() {
               <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">PROJECT SCORE</span>
               <span className="text-5xl font-extrabold text-zinc-100 leading-none my-1">{mockReviews[selectedMockMode].score}.0</span>
               <span className="text-xs font-semibold text-zinc-300">
-                {mockReviews[selectedMockMode].score >= 8 ? 'Outstanding' : mockReviews[selectedMockMode].score >= 5 ? 'Strong performance' : 'Requires review'}
+                {mockReviews[selectedMockMode].score >= 6 ? 'Strong performance' : 'Requires review'}
               </span>
               <span className="text-[10px] text-zinc-500 mt-1">
-                {mockReviews[selectedMockMode].score >= 8 ? 'Top 10% of projects' : mockReviews[selectedMockMode].score >= 5 ? 'Top 35% of projects' : 'Below average'}
+                {mockReviews[selectedMockMode].score >= 6 ? 'Top 35% of projects' : 'Below average'}
               </span>
             </div>
 
             <div className="flex-1 flex flex-col gap-4">
               <div>
-                <h4 className="text-xs uppercase tracking-wider text-zinc-400 font-bold mb-1.5">The Roast</h4>
-                <p className="text-zinc-300 text-sm leading-relaxed italic bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                  "{mockReviews[selectedMockMode].roast}"
+                <h4 className="text-xs uppercase tracking-wider text-zinc-400 font-bold mb-1.5">The Critique</h4>
+                <p className="text-zinc-300 text-sm leading-relaxed italic bg-zinc-950 border border-zinc-850 rounded-xl p-4">
+                  &ldquo;{mockReviews[selectedMockMode].roast}&rdquo;
                 </p>
               </div>
               <div>
@@ -138,6 +183,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      
     </div>
   )
 }

@@ -1,10 +1,10 @@
 import type { CollectionConfig } from 'payload'
 
-export const Resumes: CollectionConfig = {
-  slug: 'resumes',
+export const IdeaReports: CollectionConfig = {
+  slug: 'idea_reports',
   admin: {
-    useAsTitle: 'score',
-    defaultColumns: ['user', 'score', 'createdAt'],
+    useAsTitle: 'title',
+    defaultColumns: ['title', 'industry', 'createdBy', 'createdAt'],
   },
   access: {
     read: () => true,
@@ -14,37 +14,33 @@ export const Resumes: CollectionConfig = {
   },
   fields: [
     {
-      name: 'resumeUrl',
+      name: 'title',
       type: 'text',
       required: true,
     },
     {
-      name: 'resumePublicId',
-      type: 'text',
-    },
-    {
-      name: 'score',
-      type: 'number',
-      required: true,
-      min: 1,
-      max: 100,
-    },
-    {
-      name: 'roast',
+      name: 'description',
       type: 'textarea',
       required: true,
     },
     {
-      name: 'suggestions',
-      type: 'array',
+      name: 'targetAudience',
+      type: 'text',
       required: true,
-      fields: [
-        {
-          name: 'suggestion',
-          type: 'text',
-          required: true,
-        },
-      ],
+    },
+    {
+      name: 'industry',
+      type: 'text',
+      required: true,
+    },
+    {
+      name: 'countryRegion',
+      type: 'text',
+    },
+    {
+      name: 'report',
+      type: 'json',
+      required: true,
     },
     {
       name: 'provider',
@@ -59,7 +55,7 @@ export const Resumes: CollectionConfig = {
       type: 'text',
     },
     {
-      name: 'user',
+      name: 'createdBy',
       type: 'relationship',
       relationTo: 'users',
       required: true,

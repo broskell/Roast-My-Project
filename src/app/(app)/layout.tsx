@@ -4,7 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { AuthProvider, useAuth } from '../../context/AuthContext'
 import Link from 'next/link'
-import { LogOut, LayoutDashboard, Send, FileText, User as UserIcon, ShieldAlert, Flame } from 'lucide-react'
+import { LogOut, LayoutDashboard, Send, FileText, User as UserIcon, ShieldAlert, Flame, Search } from 'lucide-react'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -36,6 +36,13 @@ function Navigation() {
               >
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden sm:inline">Dashboard</span>
+              </Link>
+              <Link
+                href="/idea-research"
+                className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
+              >
+                <Search className="h-4 w-4" />
+                <span className="hidden sm:inline">Idea Research</span>
               </Link>
               <Link
                 href="/submit"

@@ -46,6 +46,10 @@ export const GeminiDebugLogs: CollectionConfig = {
       type: 'text',
     },
     {
+      name: 'provider',
+      type: 'text',
+    },
+    {
       name: 'errorType',
       type: 'text',
     },

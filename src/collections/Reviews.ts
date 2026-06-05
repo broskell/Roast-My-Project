@@ -79,6 +79,18 @@ export const Reviews: CollectionConfig = {
       ],
     },
     {
+      name: 'provider',
+      type: 'text',
+    },
+    {
+      name: 'modelUsed',
+      type: 'text',
+    },
+    {
+      name: 'requestId',
+      type: 'text',
+    },
+    {
       name: 'project',
       type: 'relationship',
       relationTo: 'projects',

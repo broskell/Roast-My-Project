@@ -25,6 +25,7 @@ export const Prompts: CollectionConfig = {
         { label: 'Senior Developer Review', value: 'Senior Developer Review' },
         { label: 'Investor Review', value: 'Investor Review' },
         { label: 'Resume Review', value: 'Resume Review' },
+        { label: 'Idea Research', value: 'Idea Research' },
       ],
     },
     {

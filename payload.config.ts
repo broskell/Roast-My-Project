@@ -13,6 +13,7 @@ import { Reviews } from './src/collections/Reviews'
 import { Resumes } from './src/collections/Resumes'
 import { Prompts } from './src/collections/Prompts'
 import { GeminiDebugLogs } from './src/collections/GeminiDebugLogs'
+import { IdeaReports } from './src/collections/IdeaReports'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -38,6 +39,7 @@ export default buildConfig({
     Resumes,
     Prompts,
     GeminiDebugLogs,
+    IdeaReports,
   ],
   editor: lexicalEditor({}),
   secret: process.env.PAYLOAD_SECRET || 'd1a7b4f593e820c78a0f9b6e4d3c2b1a5e6f7d8c9b0a1b2c3d4e5f6',
@@ -139,6 +141,83 @@ export default buildConfig({
   "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3", "suggestion 4", "suggestion 5"]
 }`,
         description: 'Critique resume text and layout formatting.',
+      },
+      {
+        key: 'Idea Research',
+        promptText: `You are an expert market research analyst and startup strategist. Analyze the user's startup idea. You MUST perform web research using search grounding to gather real evidence, actual competitors, similar startups, and real-world failure/success outcomes. Do NOT invent or hallucinate any name, URL, statistic, or outcome.
+
+Return your response in raw JSON format matching this schema:
+{
+  "startupSummary": "Objective summary of the startup idea.",
+  "marketCategory": "e.g. SaaS, B2B, B2C, Marketplace, Consumer, Developer Tool, Fintech, Healthcare, Education, etc.",
+  "competitors": {
+    "direct": [
+      { "name": "Company Name", "website": "https://example.com", "description": "How they compete directly." }
+    ],
+    "indirect": [
+      { "name": "Company Name", "website": "https://example.com", "description": "How they compete indirectly." }
+    ],
+    "alternatives": [
+      { "name": "Alternative Name", "website": "https://example.com", "description": "Non-software or manual workarounds." }
+    ]
+  },
+  "similarStartups": {
+    "existing": ["Similar active startup 1", "Similar active startup 2"],
+    "acquisitions": ["Acquired similar startup 1", "Acquired similar startup 2"],
+    "shutdowns": ["Failed or shutdown similar startup 1", "Failed or shutdown similar startup 2"]
+  },
+  "whySimilarFailed": [
+    "Evidence-backed reason 1 (e.g. timing, CAC, retention) mentioning specific failed startups.",
+    "Evidence-backed reason 2..."
+  ],
+  "whySimilarSucceeded": [
+    "Evidence-backed reason 1 (e.g. unique distribution) mentioning specific successful startups.",
+    "Evidence-backed reason 2..."
+  ],
+  "marketOpportunity": {
+    "opportunityScore": 85,
+    "growthIndicators": ["Industry trend or growth metric 1", "Growth metric 2"],
+    "marketMaturity": "Emerging / Growing / Saturated / Mature"
+  },
+  "customerSegments": {
+    "primary": "Primary customer profile.",
+    "secondary": "Secondary customer profile.",
+    "earlyAdopters": "Ideal first customers."
+  },
+  "risks": {
+    "competition": "Competitive landscape risk description.",
+    "regulation": "Regulatory/compliance hurdles.",
+    "technicalComplexity": "Technical implementation hurdles.",
+    "customerAcquisition": "Customer acquisition difficulty/CAC risk.",
+    "aiCommoditization": "Commoditization by AI models.",
+    "capitalRequirements": "Capital intensity or funding needs."
+  },
+  "founderBlindSpots": [
+    "Common blind spot 1 (e.g., pricing, compliance, sales cycle length).",
+    "Common blind spot 2..."
+  ],
+  "businessModelSuggestions": ["Recommended model 1 (e.g., subscription, usage-based, marketplace)", "Recommended model 2..."],
+  "goToMarketStrategy": ["GTM channel 1 (e.g., SEO, content, partnerships)", "GTM channel 2..."],
+  "mvpRoadmap": {
+    "week1": "Scope and design specifications for Week 1.",
+    "week2": "MVP development and core feature coding for Week 2.",
+    "week3": "Testing and initial user onboarding for Week 3.",
+    "week4": "Launch preparation and distribution launch for Week 4."
+  },
+  "investorReview": {
+    "vcQuestions": ["Question VCs will ask 1", "Question VCs will ask 2"],
+    "fundingRisks": ["Funding risk 1", "Funding risk 2"],
+    "defensibilityConcerns": ["Defensibility concern 1", "Defensibility concern 2"]
+  },
+  "recommendation": {
+    "decision": "Build / Pivot / Avoid",
+    "reasoning": "Comprehensive logic behind the final recommendation."
+  },
+  "sources": [
+    { "sourceTitle": "Name or title of the source", "sourceUrl": "https://source-url.com", "summary": "Brief summary of evidence used." }
+  ]
+}`,
+        description: 'Comprehensive startup intelligence and market competitor validation report with real-time web search grounding.',
       },
     ]
 

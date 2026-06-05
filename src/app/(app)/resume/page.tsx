@@ -113,9 +113,16 @@ export default function ResumePage() {
         throw new Error('AI resume analysis failed')
       }
 
-    } catch (err: any) {
-      console.error('Resume submission error:', err)
-      setError(err.response?.data?.error || err.message || 'Failed to analyze resume. Please try again.')
+    } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const errorObj = err as any
+      console.error('Resume submission error:', errorObj)
+      const resData = errorObj.response?.data
+      if (resData && resData.requestId) {
+        setError(`[Error Stage: ${resData.stage || 'unknown'}][ID: ${resData.requestId.substring(0, 8)}] - ${resData.error || 'Failed to analyze resume'}`)
+      } else {
+        setError(errorObj.response?.data?.error || errorObj.message || 'Failed to analyze resume. Please try again.')
+      }
       setUploading(false)
       setUploadSuccess(false)
       setAnalyzing(false)
@@ -127,8 +134,8 @@ export default function ResumePage() {
   return (
     <div className="max-w-xl mx-auto py-8 px-4">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-extrabold text-zinc-100 tracking-tight mb-2">Roast My Resume</h1>
-        <p className="text-xs text-zinc-500">Upload your professional resume in PDF format to get graded, roasted, and optimized by Gemini</p>
+        <h1 className="text-3xl font-extrabold text-zinc-100 tracking-tight mb-2">Resume Review Workspace</h1>
+        <p className="text-xs text-zinc-500">Upload your professional resume in PDF format to evaluate ATS compatibility, receive structural critiques, and get concrete suggestions</p>
       </div>
 
       {error && (
