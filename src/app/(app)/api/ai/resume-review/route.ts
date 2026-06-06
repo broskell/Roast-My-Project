@@ -32,9 +32,29 @@ export async function POST(req: Request) {
       }, { status: 401 })
     }
 
-    const body = (await req.json()) as { resumeUrl?: string; resumePublicId?: string }
-    const { resumeUrl, resumePublicId } = body
-    console.log(`[RESUME-ROAST][STEP-1][VALIDATION][${requestId}] Resume review parameters:`, { resumeUrl, resumePublicId, userId: user.id })
+    const contentType = req.headers.get('content-type') || ''
+    let resumeUrl = ''
+    let resumePublicId = ''
+    let uploadedFile: File | null = null
+
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await req.formData()
+      const fileValue = formData.get('file')
+      uploadedFile = fileValue instanceof File ? fileValue : null
+      resumeUrl = String(formData.get('resumeUrl') || '')
+      resumePublicId = String(formData.get('resumePublicId') || '')
+    } else {
+      const body = (await req.json()) as { resumeUrl?: string; resumePublicId?: string }
+      resumeUrl = body.resumeUrl || ''
+      resumePublicId = body.resumePublicId || ''
+    }
+
+    console.log(`[RESUME-ROAST][STEP-1][VALIDATION][${requestId}] Resume review parameters:`, {
+      hasUploadedFile: Boolean(uploadedFile),
+      resumeUrl,
+      resumePublicId,
+      userId: user.id
+    })
 
     if (!resumeUrl) {
       console.error(`[RESUME-ROAST][STEP-1][VALIDATION][${requestId}] Missing resumeUrl`)
@@ -68,27 +88,40 @@ export async function POST(req: Request) {
     const promptTemplate = promptsResult.docs[0]
     const promptText = promptTemplate.promptText
 
-    // 3. Download resume PDF
-    console.log(`[RESUME-ROAST][STEP-3][DOWNLOAD][${requestId}] Downloading PDF resume from URL: ${resumeUrl}`)
+    // 3. Load resume PDF bytes from the multipart upload, falling back to the saved URL for older clients.
     let base64Pdf = ''
     let buffer: Buffer
 
     const downloadTimer = startTimer()
-    try {
-      const response = await axios.get(resumeUrl, { responseType: 'arraybuffer' })
-      buffer = Buffer.from(response.data as ArrayBuffer)
+    if (uploadedFile) {
+      console.log(`[RESUME-ROAST][STEP-3][PDF-BYTES][${requestId}] Reading PDF from multipart upload: ${uploadedFile.name}`)
+      buffer = Buffer.from(await uploadedFile.arrayBuffer())
       if (buffer.length === 0) {
-        throw new Error('Resume PDF buffer is empty')
+        return NextResponse.json({
+          requestId,
+          stage: 'pdf-validation',
+          error: 'Resume PDF buffer is empty'
+        }, { status: 400 })
       }
       base64Pdf = buffer.toString('base64')
-    } catch (err: unknown) {
-      const errorObj = err as { message?: string } | null | undefined
-      console.error(`[RESUME-ROAST][STEP-3][DOWNLOAD][${requestId}] Failed to download resume PDF:`, errorObj?.message || err)
-      return NextResponse.json({
-        requestId,
-        stage: 'image-download',
-        error: `Failed to retrieve resume PDF from storage: ${errorObj?.message || err}`
-      }, { status: 502 })
+    } else {
+      console.log(`[RESUME-ROAST][STEP-3][DOWNLOAD][${requestId}] Downloading PDF resume from URL: ${resumeUrl}`)
+      try {
+        const response = await axios.get(resumeUrl, { responseType: 'arraybuffer' })
+        buffer = Buffer.from(response.data as ArrayBuffer)
+        if (buffer.length === 0) {
+          throw new Error('Resume PDF buffer is empty')
+        }
+        base64Pdf = buffer.toString('base64')
+      } catch (err: unknown) {
+        const errorObj = err as { message?: string } | null | undefined
+        console.error(`[RESUME-ROAST][STEP-3][DOWNLOAD][${requestId}] Failed to download resume PDF:`, errorObj?.message || err)
+        return NextResponse.json({
+          requestId,
+          stage: 'pdf-download',
+          error: `Failed to retrieve resume PDF from storage: ${errorObj?.message || err}`
+        }, { status: 502 })
+      }
     }
     const downloadDuration = endTimer(downloadTimer)
 

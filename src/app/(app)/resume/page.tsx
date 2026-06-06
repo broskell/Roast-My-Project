@@ -101,9 +101,15 @@ export default function ResumePage() {
       setUploading(false)
 
       setAnalyzing(true)
-      const reviewResponse = await apiClient.post('/api/ai/resume-review', {
-        resumeUrl: url,
-        resumePublicId: publicId,
+      const reviewFormData = new FormData()
+      reviewFormData.append('file', file)
+      reviewFormData.append('resumeUrl', url)
+      reviewFormData.append('resumePublicId', publicId)
+
+      const reviewResponse = await apiClient.post('/api/ai/resume-review', reviewFormData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       })
 
       if (reviewResponse.data.success) {

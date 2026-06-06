@@ -285,7 +285,7 @@ export default function IdeaResearchPage() {
   }, [submitting])
 
   return (
-    <div className="max-w-6xl mx-auto py-4 px-2 space-y-8 animate-in fade-in duration-500">
+    <div className="w-full max-w-none py-4 px-2 space-y-8 animate-in fade-in duration-500">
       
       {/* Upper Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-zinc-800 pb-6">
@@ -307,9 +307,9 @@ export default function IdeaResearchPage() {
       {/* Main Grid Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
-        {/* Left Column: Report List panel (Visible when not searching or on mobile viewing details) */}
-        {(!selectedReport && !showCreateForm) || (selectedReport && !loadingDetail) ? (
-          <div className={`lg:col-span-1 space-y-4 ${selectedReport ? 'hidden lg:block' : 'block'}`}>
+        {/* Left Column: Report List panel */}
+        {!selectedReport && !showCreateForm ? (
+          <div className="lg:col-span-1 space-y-4">
             <h3 className="text-xs uppercase tracking-wider text-zinc-500 font-bold mb-2 flex items-center gap-1.5">
               <Clock className="h-4 w-4 text-zinc-500" />
               Intelligence History
@@ -369,7 +369,7 @@ export default function IdeaResearchPage() {
         ) : null}
 
         {/* Right Columns: Forms, Loader, or Report Detail */}
-        <div className={`lg:col-span-2 ${(!selectedReport && !showCreateForm) ? 'hidden lg:block' : 'block'}`}>
+        <div className={`${selectedReport || showCreateForm || submitting || loadingDetail || detailError ? 'lg:col-span-3' : 'lg:col-span-2 hidden lg:block'}`}>
           
           {/* Submitting Loader */}
           {submitting && (
@@ -525,8 +525,8 @@ export default function IdeaResearchPage() {
           {selectedReport && !loadingDetail && !detailError && (
             <div className="space-y-6">
               
-              {/* Back Button (Mobile only) */}
-              <div className="flex lg:hidden items-center justify-between mb-2">
+              {/* Back Button */}
+              <div className="flex items-center justify-between mb-2">
                 <button
                   onClick={handleBackToList}
                   className="inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-200 transition-colors"

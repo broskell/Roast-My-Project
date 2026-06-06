@@ -115,7 +115,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Navigation />
-      <main className="flex-1 container mx-auto px-4 py-8 sm:px-6 relative z-10">
+      <main className="flex-1 w-full px-4 py-8 sm:px-6 relative z-10">
         {children}
       </main>
       <footer className="w-full border-t border-zinc-800 py-6 bg-zinc-950 text-center text-xs text-zinc-500">
