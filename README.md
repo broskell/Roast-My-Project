@@ -1,296 +1,249 @@
-# 🔥 Roast My Project
+# Roast My Project
 
-> Get brutal, funny, or professional AI feedback on your engineering projects and resumes. Boost your designs, improve your system architecture, and prepare for interviews using Gemini AI.
+AI feedback for builders who want more than a generic thumbs-up.
 
----
+Roast My Project lets users submit engineering projects, screenshots, resumes, and startup ideas, then receive structured AI feedback through multiple review modes. The upgraded app now runs on Next.js 16, React 19, Payload CMS 3, Gemini, Groq fallback routing, Cloudinary uploads, Firebase/Twilio authentication, and a new grounded idea-research workflow.
 
-## 📸 Project Preview
 ![Roast My Project Screenshot](./src/assets/Screenshot%202026-06-05%20002234.png)
 
----
+## What It Does
 
-## 🛠️ Stack & Technologies
+- Project roasts from screenshots, descriptions, GitHub links, and live URLs.
+- Multiple review modes: Funny Roast, Brutal Roast, Recruiter Review, Senior Developer Review, and Investor Review.
+- Resume review with PDF validation, AI scoring, and concrete improvement suggestions.
+- Idea Intelligence reports for startup concepts, including competitors, market risks, MVP roadmap, VC questions, and source-backed evidence.
+- User dashboard with projects, reviews, resume results, idea reports, and analytics.
+- Payload admin dashboard for managing users, prompts, reviews, uploaded records, and AI debug logs.
+- Google OAuth and phone OTP login with JWT-protected API routes.
+- Gemini-first AI routing with Groq fallback for quota and rate-limit failures.
 
-The application is built on a modern, high-performance tech stack utilizing a Unified Serverless Next.js architecture integrated with a Headless CMS backend and multi-modal generative AI pipelines.
+## Tech Stack
 
-| Layer | Technologies / Packages | Description |
-| :--- | :--- | :--- |
-| **Frontend Framework** | **Next.js 15+** (App Router), React 19, TypeScript | High-performance, SEO-friendly, server-side rendered foundation with client-side interactive routing. |
-| **Styling** | **Tailwind CSS v4**, PostCSS | Sleek, glassmorphic layout and dark-mode styling utilizing modern CSS custom property theme mappings. |
-| **AI Integration** | **@google/generative-ai** (Gemini API) | Multimodal prompts analyzing base64 encoded screenshots and PDF document attachments. |
-| **Database & CMS** | **Payload CMS 3.x**, **MongoDB** (Mongoose) | Unified backend dashboard, API Router, schema management, and local database API. |
-| **Authentication** | **Firebase Admin SDK** (Google OAuth), **Twilio** (SMS OTP), JWT | Multi-channel authorization flow issuing custom JWT tokens verified on protected route handlers. |
-| **Media Hosting** | **Cloudinary** | Cloud host for screenshot uploads and resume PDF files. |
-| **Diagnostics** | **Sharp**, Axios, Custom Health Routes | Automated image validation metrics, API latency testing, and system diagnostics. |
+| Layer | Technology |
+| --- | --- |
+| App framework | Next.js 16.2.7, App Router, React 19.2.4, TypeScript |
+| Styling | Tailwind CSS v4, PostCSS |
+| CMS and database | Payload CMS 3.85, MongoDB via `@payloadcms/db-mongodb` |
+| AI providers | Google Gemini via `@google/generative-ai`, Groq OpenAI-compatible chat completions |
+| Uploads and media | Cloudinary, Sharp image diagnostics |
+| Authentication | Firebase client/admin auth, Twilio OTP, app JWTs |
+| Charts and UI | Recharts, Lucide React, canvas-confetti |
+| Tooling | ESLint 9, TypeScript 5, `tsx` diagnostics |
 
----
+## Main Workflows
 
-## ⚙️ System Workflow & Architecture
+### Project Review
 
-The application handles two primary workflows: **Project Roasts** (Multimodal screenshots + metadata) and **Resume Reviews** (PDF document parsing).
-
-### 1. Roast Request Pipeline
 ```mermaid
 flowchart TD
-    A[Client Request: POST /api/ai/roast] --> B[Validate Environment & Authenticate JWT]
-    B -->|Authorized| C[Fetch Project Metadata from MongoDB]
-    B -->|Unauthorized| D[Return 401/403 Error]
-    C --> E[Verify & Download Screenshot from Cloudinary]
-    E --> F[Run Sharp Image Diagnostics]
-    F --> G[Load Roaster Prompt from Prompts Collection]
-    G --> H[Run getBestAvailableModel Ping Check]
-    H -->|Select Best Model| I[Construct Multimodal Gemini Request]
-    I --> J[Call Gemini API with image + prompt]
-    J -->|Success| K[Sanitize and Parse JSON Response]
-    J -->|Failure| L[Log Error & Return API Error Status]
-    K --> M[Validate JSON schema]
-    M -->|Valid| N[Save Review to Database]
-    M -->|Invalid Schema| O[Attempt Fallback JSON Recovery]
-    N --> P[Check Category Mismatch & Update Project]
-    P --> Q[Return Review & Score to User]
+  A["User submits project"] --> B["Upload screenshot to Cloudinary"]
+  B --> C["Create project in Payload/MongoDB"]
+  C --> D["POST /api/ai/roast"]
+  D --> E["Verify JWT and project ownership"]
+  E --> F["Download and validate screenshot with Sharp"]
+  F --> G["Load selected prompt from Payload"]
+  G --> H["Call Gemini through AI router"]
+  H --> I{"Gemini quota or rate limit?"}
+  I -->|"No"| J["Parse JSON response"]
+  I -->|"Yes"| K["Fallback to Groq"]
+  K --> J
+  J --> L["Validate review schema"]
+  L --> M["Save review and detected category"]
+  M --> N["Return score, roast, review, strengths, weaknesses, suggestions"]
 ```
 
-### 2. Multi-Channel Authentication Workflow
-* **Google OAuth**: Users authenticate client-side via Google Sign-In with Firebase, generating an ID Token. The server decrypts and validates the token using the `firebase-admin` SDK, creates/updates the User record in MongoDB, and signs an application-level JWT.
-* **SMS OTP (Twilio)**: Users request a verification code sent to their mobile device. If Twilio environment variables are unconfigured, the system automatically falls back to **Mock Developer Mode**, outputting the generated code to the server log and return payloads for local testing convenience.
-
----
-
-## 🗄️ Database Schema Design (UML / ERD)
-
-Managed dynamically via **Payload CMS collections** backed by MongoDB. Prompt templates are seeded automatically during the database initializing hook.
+### Resume Review
 
 ```mermaid
-erDiagram
-    USERS ||--o{ PROJECTS : "creates"
-    USERS ||--o{ RESUMES : "submits"
-    PROJECTS ||--o{ REVIEWS : "gets"
-    OTP_VERIFICATIONS ||--o{ USERS : "verifies"
-    
-    USERS {
-        ObjectId id PK
-        string name
-        string phone
-        string email
-        string authType "google | twilio"
-        date lastLogin
-    }
-    PROJECTS {
-        ObjectId id PK
-        string title
-        string description
-        string screenshotUrl
-        string screenshotPublicId
-        string githubUrl
-        string liveUrl
-        string category "auto-detected"
-        ObjectId user FK
-    }
-    REVIEWS {
-        ObjectId id PK
-        string roast
-        string review
-        array strengths
-        array weaknesses
-        array suggestions
-        number score "1-10"
-        string mode "select"
-        ObjectId project FK
-    }
-    RESUMES {
-        ObjectId id PK
-        string resumeUrl
-        string resumePublicId
-        number score "1-100"
-        string roast
-        array suggestions
-        ObjectId user FK
-    }
-    OTP_VERIFICATIONS {
-        ObjectId id PK
-        string phone
-        string otp
-        date expiresAt "TTL Indexed"
-        boolean verified
-    }
-    PROMPTS {
-        ObjectId id PK
-        string key "unique"
-        string promptText
-        string description
-    }
-    ADMINS {
-        ObjectId id PK
-        string email
-        string password
-    }
-    GEMINI_DEBUG_LOGS {
-        ObjectId id PK
-        string requestId
-        string projectId
-        string reviewMode
-        string rawResponse
-        boolean parseSuccess
-        string parseError
-        string modelUsed
-        string errorType
-        string errorMessage
-        number promptLength
-        number imageBytes
-    }
+flowchart TD
+  A["User uploads PDF resume"] --> B["Validate file size and PDF magic bytes"]
+  B --> C["Load Resume Review prompt"]
+  C --> D["Call AI router with PDF media"]
+  D --> E{"Fallback provider needed?"}
+  E -->|"Gemini works"| F["Gemini analyzes PDF"]
+  E -->|"Groq fallback"| G["Extract PDF text and analyze with Groq"]
+  F --> H["Validate score, roast, suggestions"]
+  G --> H
+  H --> I["Save resume review"]
 ```
 
----
+### Idea Intelligence
 
-## 📂 Codebase File Tree
-
-The workspace uses a unified structure where Payload CMS is mounted onto Next.js routes under the `(payload)` path, and the user application runs under `(app)`.
-
-```
-.
-├── payload.config.ts                      # Payload CMS Configuration (Collections & DB adapters)
-├── next.config.ts                         # Next.js configurations
-├── package.json                           # Workspace scripts & dependencies
-├── tsconfig.json                          # TypeScript project compiler definitions
-├── eslint.config.mjs                      # Linter properties
-├── postcss.config.mjs                     # PostCSS configurations
-└── src/
-    ├── test-gemini.ts                     # Standalone Gemini API prompt validation script
-    ├── test-gemini-models.ts              # Model listing diagnostic script
-    ├── assets/
-    │   └── Screenshot 2026-06-05 002234.png # Project Preview image
-    ├── config/
-    │   └── gemini.ts                      # Gemini API client & fallback health manager
-    ├── context/
-    │   └── AuthContext.tsx                # Frontend Auth Provider & route guardian
-    ├── lib/
-    │   ├── env.ts                         # Startup Environment validator
-    │   ├── errors.ts                      # Gemini error classification translator
-    │   └── timing.ts                      # Multi-stage request duration timer
-    ├── types/
-    │   └── ai.ts                          # Structured Review interfaces and runtime guards
-    ├── utils/
-    │   ├── apiClient.ts                   # Custom Axios API configuration (auto JWT inclusion)
-    │   ├── auth.ts                        # JWT utilities (signing, decoding, validation)
-    │   └── firebase.ts                    # Firebase Client SDK initializer
-    ├── components/
-    │   ├── AdminAnalytics.tsx             # Analytics widget injected before Payload dashboard
-    │   ├── ErrorState.tsx                 # Standardized component for handling runtime failures
-    │   └── SkeletonLoader.tsx             # Content loading placeholders
-    ├── collections/                       # MongoDB collection configurations for Payload
-    │   ├── Admins.ts                      # Payload Admin users
-    │   ├── Users.ts                       # Application clients
-    │   ├── OtpVerifications.ts            # Verification registers (MongoDB TTL indexed)
-    │   ├── Projects.ts                    # User uploads (Titles, category & Cloudinary metadata)
-    │   ├── Reviews.ts                     # Generated project evaluations
-    │   ├── Resumes.ts                     # Generated resume reviews
-    │   ├── Prompts.ts                     # Dynanic system prompts for roasting modes
-    │   └── GeminiDebugLogs.ts             # Raw API payloads and parsing diagnostics
-    └── app/
-        ├── favicon.ico
-        ├── (payload)/                     # Next.js router mappings mounting the Payload Admin portal
-        │   ├── admin/
-        │   │   ├── importMap.js           # Compiled admin assets imports
-        │   │   ├── importMap.ts
-        │   │   └── [[...slug]]/           # Dynamic Admin Panel route catcher
-        │   └── api/
-        │       └── [[...slug]]/           # Dynamic Payload CMS API router
-        └── (app)/                         # Next.js User Application Routes
-            ├── globals.css                # Global styling utilizing Tailwind CSS v4 variables
-            ├── layout.tsx                 # App entry setup mounting layout shells & Auth Provider
-            ├── page.tsx                   # Interactive project landing page
-            ├── login/                     # Phone OTP & Google Auth portal login screen
-            ├── verify-otp/                # SMS OTP code verification terminal
-            ├── dashboard/                 # User workspace displaying statistics and projects
-            ├── submit/                    # Form for posting a project and uploading screenshots
-            ├── resume/                    # Portal for uploading and analyzing PDF resumes
-            ├── profile/                   # User profile manager
-            ├── results/                   # Detailed results screens
-            │   ├── project/[id]/          # Detailed report for project roasts
-            │   └── resume/[id]/           # Detailed report for resume reviews
-            └── api/                       # REST endpoint route handlers
-                ├── upload/                # Cloudinary image/pdf stream upload
-                ├── projects/              # CRUD endpoints for managing projects
-                │   └── [id]/
-                ├── reviews/               # Fetch evaluations and reviews
-                │   └── [id]/
-                ├── dashboard/stats/       # Dashboard metrics (Averages, timelines, Recharts data)
-                ├── admin/stats/           # System analytics summaries for Payload admins
-                ├── debug/roast-health/    # Server dependency diagnostic endpoint
-                ├── auth/
-                │   ├── firebase-login/    # Google Login token validation
-                │   ├── send-otp/          # Generate & send Twilio SMS OTP
-                │   └── verify-otp/        # Validate OTP & return custom signed JWT
-                └── ai/
-                    ├── roast/             # Gemini Roast orchestrator (Image analysis)
-                    └── resume-review/     # Gemini Resume orchestrator (PDF document analysis)
+```mermaid
+flowchart TD
+  A["User enters startup idea"] --> B["POST /api/idea-research"]
+  B --> C["Verify JWT"]
+  C --> D["Compile DuckDuckGo HTML search evidence"]
+  D --> E["Load Idea Research prompt"]
+  E --> F["Call AI router"]
+  F --> G["Validate structured report schema"]
+  G --> H["Save idea report"]
+  H --> I["Render tabs: overview, competitors, outcomes, strategy, roadmap, sources"]
 ```
 
----
+## Routes
 
-## 🔑 Environment Variables Setup
+### User Pages
 
-Create a `.env` file in the root directory and configure the following keys:
+| Route | Purpose |
+| --- | --- |
+| `/` | Landing and entry experience |
+| `/login` | Google and phone login |
+| `/verify-otp` | OTP confirmation flow |
+| `/dashboard` | User workspace and stats |
+| `/submit` | Project submission |
+| `/resume` | Resume upload and review |
+| `/idea-research` | Startup idea validation reports |
+| `/profile` | User profile |
+| `/results/project/[id]` | Project review results |
+| `/results/resume/[id]` | Resume review results |
+| `/admin` | Payload CMS admin dashboard |
+
+### API Routes
+
+| Route | Purpose |
+| --- | --- |
+| `/api/auth/firebase-login` | Firebase ID token verification and app JWT issue |
+| `/api/auth/send-otp` | Twilio or mock OTP generation |
+| `/api/auth/verify-otp` | OTP validation and app JWT issue |
+| `/api/upload` | Cloudinary upload endpoint |
+| `/api/projects` | Project list and creation |
+| `/api/projects/[id]` | Project detail, update, and delete |
+| `/api/ai/roast` | Project screenshot analysis |
+| `/api/ai/resume-review` | Resume PDF analysis |
+| `/api/reviews` | Review listing |
+| `/api/reviews/[id]` | Review detail |
+| `/api/idea-research` | Idea report list and creation |
+| `/api/idea-research/[id]` | Idea report detail with ownership check |
+| `/api/dashboard/stats` | User dashboard metrics |
+| `/api/admin/stats` | Payload admin analytics |
+| `/api/debug/roast-health` | Roast pipeline diagnostics |
+
+## Data Model
+
+Payload CMS manages the application collections:
+
+- `admins`: Payload dashboard users.
+- `users`: App users authenticated by Google or phone OTP.
+- `otp_verifications`: OTP records with a MongoDB TTL index.
+- `projects`: Submitted project metadata and Cloudinary screenshot references.
+- `reviews`: AI-generated project reviews.
+- `resumes`: Resume review results and uploaded PDF metadata.
+- `prompts`: Editable prompt templates for every review mode.
+- `gemini_debug_logs`: AI request diagnostics, provider used, model used, raw output, parse status, and errors.
+- `idea_reports`: Grounded startup research reports with market, risk, roadmap, and source data.
+
+Default prompts are seeded on Payload initialization when missing.
+
+## Environment Variables
+
+Create `.env` in the project root.
 
 ```env
-# MongoDB Connection
-MONGODB_URI=your_mongodb_connection_string
+# Database
+MONGODB_URI=mongodb://127.0.0.1:27017/roast-my-project
+# or
+DATABASE_URI=mongodb://127.0.0.1:27017/roast-my-project
 
-# Payload CMS Configuration
-PAYLOAD_SECRET=your_payload_session_signing_secret
+# Payload
+PAYLOAD_SECRET=replace_with_a_long_secret
 PAYLOAD_PUBLIC_SERVER_URL=http://localhost:3000
 
-# Application JWT Authorization Secret
-JWT_SECRET=your_jwt_signing_secret_for_app_users
+# App auth
+JWT_SECRET=replace_with_a_long_jwt_secret
 
-# Gemini API Integration
-GEMINI_API_KEY=your_gemini_developer_api_key
+# AI providers
+GEMINI_API_KEY=your_gemini_api_key
+GROQ_API_KEY=your_groq_api_key
 ENABLE_GEMINI_DEBUG=true
 
-# Cloudinary Integration (Media Storage)
-CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 
-# Twilio SMS OTP Configuration
-TWILIO_ACCOUNT_SID=your_twilio_sid
-TWILIO_AUTH_TOKEN=your_twilio_auth_token
-TWILIO_PHONE_NUMBER=your_twilio_phone_number
+# Twilio OTP
+TWILIO_ACCOUNT_SID=your_account_sid
+TWILIO_AUTH_TOKEN=your_auth_token
+TWILIO_PHONE_NUMBER=your_twilio_number
 
-# Frontend Firebase Configuration (Exposed)
+# Firebase client config
 NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_firebase_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_firebase_app_id
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_firebase_measurement_id
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 ```
 
-*Note: If Twilio credentials are left empty, the application will default to Mock OTP verification mode (printing the OTP codes inside your terminal).*
+`MONGODB_URI` or `DATABASE_URI` is required. The runtime env validator also requires `PAYLOAD_SECRET`, `GEMINI_API_KEY`, `GROQ_API_KEY`, and the Cloudinary keys. If Twilio is not configured, the OTP route can fall back to local mock behavior for development.
 
----
+## Getting Started
 
-## 🚀 Getting Started
+Install dependencies:
 
-Follow these steps to run the application locally:
-
-### 1. Install Dependencies
 ```bash
 npm install
 ```
 
-### 2. Run the Development Server
+Run the development server:
+
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
 
-### 3. Access Payload Admin Dashboard
-Navigate to [http://localhost:3000/admin](http://localhost:3000/admin) to log into the Payload CMS interface. You can create an admin profile on the first load, which will auto-seed the default roaster prompt templates (`Funny Roast`, `Brutal Roast`, etc.) into your MongoDB instance.
+Open [http://localhost:3000](http://localhost:3000).
 
-### 4. Build for Production
-```bash
-npm run build
-npm start
+Open the Payload admin dashboard at [http://localhost:3000/admin](http://localhost:3000/admin). On first setup, create the admin user; prompt templates and the OTP TTL index are initialized during Payload startup.
+
+## Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the Next.js development server |
+| `npm run build` | Build for production |
+| `npm start` | Start the production server |
+| `npm run lint` | Run ESLint |
+| `npm run typecheck` | Run TypeScript without emitting files |
+| `npm run test:gemini-models` | Check available Gemini models using `.env` |
+
+## Project Structure
+
+```text
+.
+├── payload.config.ts
+├── next.config.ts
+├── package.json
+├── src
+│   ├── app
+│   │   ├── (app)
+│   │   │   ├── api
+│   │   │   ├── dashboard
+│   │   │   ├── idea-research
+│   │   │   ├── login
+│   │   │   ├── profile
+│   │   │   ├── resume
+│   │   │   ├── results
+│   │   │   ├── submit
+│   │   │   └── verify-otp
+│   │   └── (payload)
+│   │       ├── admin
+│   │       └── api
+│   ├── collections
+│   ├── components
+│   ├── config
+│   ├── context
+│   ├── lib
+│   ├── types
+│   └── utils
+└── public
 ```
+
+## Notes For Development
+
+- This repository uses the upgraded Next.js package installed in `node_modules`. Check `node_modules/next/dist/docs/` before changing framework-specific code.
+- Keep prompt behavior editable through the `prompts` collection instead of hardcoding new review instructions in route handlers.
+- AI responses are treated as untrusted JSON and validated in `src/types/ai.ts` before saving.
+- The AI router prefers Gemini and uses Groq only for quota or rate-limit fallback paths.
+- Idea research uses app-side search evidence from DuckDuckGo HTML results, then asks the AI model to produce a structured report from that evidence.
